@@ -157,8 +157,8 @@
     if(!img.complete || !img.naturalWidth){ dctx.clearRect(0,0,CW,CH); return; }
     octx.drawImage(img,0,0,CW,CH);
     var src=octx.getImageData(0,0,CW,CH).data, out=dctx.createImageData(CW,CH), o=out.data;
-    for(var i=0;i<src.length;i+=4){ var px=i>>2, x=px%CW, y=(px/CW)|0, bn=(B[y&7][x&7]+0.5)/64;
-      if(RND[px]<reveal){ var bias=(bn-0.5)*AMP, c=nearest(src[i]+bias,src[i+1]+bias,src[i+2]+bias); o[i]=c[0];o[i+1]=c[1];o[i+2]=c[2];o[i+3]=255; }
+    for(var i=0;i<src.length;i+=4){ var px=i>>2;
+      if(RND[px]<reveal){ o[i]=src[i]; o[i+1]=src[i+1]; o[i+2]=src[i+2]; o[i+3]=255; }   // dots reveal the video frame, no palette
       else { o[i+3]=0; } }
     dctx.putImageData(out,0,0);
   }
