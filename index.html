@@ -32,7 +32,9 @@
   .hero-ui{ position:absolute; inset:0; z-index:5; pointer-events:none; }
   .hero-ui a, .hero-ui button{ pointer-events:auto; }
 
-  .nav{ position:absolute; top:30px; left:50%; transform:translateX(-50%); width:567px; max-width:88vw; height:auto; opacity:0; }
+  .nav{ position:absolute; top:30px; left:50%; transform:translateX(-50%); width:567px; max-width:88vw; opacity:0; }
+  .nav img{ width:100%; height:auto; display:block; }
+  .nav .nav-ivory{ position:absolute; inset:0; }
 
   /* travelling logo */
   .logo-mover{ position:absolute; left:0; top:0; width:150px; transform-origin:0 0; will-change:transform; }
@@ -42,8 +44,8 @@
   @keyframes logoIn{ from{ opacity:0; transform:translateY(34px); } to{ opacity:1; transform:translateY(0); } }
 
   .headline{ position:absolute; top:50%; left:0; right:0; transform:translateY(-50%);
-    display:flex; justify-content:space-between; align-items:center; padding:0 4.5vw;
-    font-family:var(--charger); font-weight:400; font-size:clamp(52px,11vw,190px); line-height:.86; letter-spacing:.005em; opacity:0; }
+    text-align:center; white-space:nowrap; padding:0 4vw;
+    font-family:var(--charger); font-weight:400; font-size:clamp(40px,8vw,150px); line-height:.9; letter-spacing:.01em; opacity:0; }
 
   .heat{ position:absolute; bottom:28px; left:30px; height:44px; }
   .heat img{ position:absolute; bottom:0; left:0; height:44px; width:auto; }
@@ -110,9 +112,9 @@
       <div class="dither-layer" id="dlayer"><canvas id="dither" width="160" height="90"></canvas></div>
 
       <div class="hero-ui">
-        <img class="nav" id="nav" src="assets/Nav_Bar.svg" alt="Ironbridge navigation">
+        <div class="nav" id="nav"><img class="nav-dark" src="assets/Nav_Bar-dark.svg" alt="Ironbridge navigation"><img class="nav-ivory" src="assets/Nav_Bar.svg" alt=""></div>
         <div class="logo-mover" id="logoMover"><div class="logo-inner"><img class="logo-dark" src="assets/Logo-dark.svg" alt="Ironbridge"><img class="logo-ivory" src="assets/Logo.svg" alt=""></div></div>
-        <div class="headline" id="headline"><span>Your bridge</span><span>into AI.</span></div>
+        <div class="headline" id="headline">Your bridge into AI.</div>
         <div class="heat" id="heat"><img class="heat-dark" src="assets/Heat-dark.svg" alt="1300C white heat"><img class="heat-ivory" src="assets/Heat_Ticker.svg" alt=""></div>
         <div class="strap" id="strap">The AI department for<br>the everyday economy.</div>
         <div class="hint" id="hint">Scroll</div>
@@ -143,8 +145,8 @@
 
   <div class="dpanel" id="dpanel">
     <h4>Dither <button id="dtoggle" title="collapse">–</button></h4>
-    <div class="row"><label>Grain <span class="val" id="vGrain">160</span></label><input type="range" id="pGrain" min="70" max="300" step="10" value="160"></div>
-    <div class="row"><label>Texture <span class="val" id="vTex">90</span></label><input type="range" id="pTex" min="0" max="140" step="5" value="90"></div>
+    <div class="row"><label>Grain <span class="val" id="vGrain">300</span></label><input type="range" id="pGrain" min="70" max="300" step="10" value="300"></div>
+    <div class="row"><label>Texture <span class="val" id="vTex">50</span></label><input type="range" id="pTex" min="0" max="140" step="5" value="50"></div>
     <div class="hintline">Tunes how the dots build in and out. Scroll into the top of the hero to watch.</div>
   </div>
 
@@ -152,7 +154,7 @@
 (function(){
   "use strict";
   var PAL=[[0xfa,0xf7,0xe6],[0xf0,0xb9,0x76],[0xdf,0x85,0x51],[0xcf,0x51,0x2b],[0x41,0x48,0x8a],[0x0a,0x11,0x1a]];
-  var AMP=90, CW=160, CH=90;
+  var AMP=50, CW=300, CH=169;
   function bayer(n){ if(n===1) return [[0]]; var s=bayer(n/2),h=n/2,o=[];
     for(var y=0;y<n;y++) o.push(new Array(n).fill(0));
     for(var yy=0;yy<h;yy++) for(var xx=0;xx<h;xx++){ var v=s[yy][xx];
@@ -162,8 +164,10 @@
 
   var dither=document.getElementById('dither'), dctx=dither.getContext('2d');
   var off=document.createElement('canvas'), octx=off.getContext('2d');
-  function setGrain(cw){ CW=cw; CH=Math.round(cw*9/16); dither.width=CW; dither.height=CH; off.width=CW; off.height=CH; }
-  setGrain(160);
+  var RND=null;
+  function setGrain(cw){ CW=cw; CH=Math.round(cw*9/16); dither.width=CW; dither.height=CH; off.width=CW; off.height=CH;
+    RND=new Float32Array(CW*CH); for(var k=0;k<RND.length;k++) RND[k]=Math.random(); }
+  setGrain(300);
   var firstImg=document.getElementById('src-first'), lastImg=document.getElementById('src-last');
 
   function renderDither(img, reveal){
@@ -171,7 +175,7 @@
     octx.drawImage(img,0,0,CW,CH);
     var src=octx.getImageData(0,0,CW,CH).data, out=dctx.createImageData(CW,CH), o=out.data;
     for(var i=0;i<src.length;i+=4){ var px=i>>2, x=px%CW, y=(px/CW)|0, bn=(B[y&7][x&7]+0.5)/64;
-      if(bn<reveal){ var bias=(bn-0.5)*AMP, c=nearest(src[i]+bias,src[i+1]+bias,src[i+2]+bias); o[i]=c[0];o[i+1]=c[1];o[i+2]=c[2];o[i+3]=255; }
+      if(RND[px]<reveal){ var bias=(bn-0.5)*AMP, c=nearest(src[i]+bias,src[i+1]+bias,src[i+2]+bias); o[i]=c[0];o[i+1]=c[1];o[i+2]=c[2];o[i+3]=255; }
       else { o[i+3]=0; } }
     dctx.putImageData(out,0,0);
   }
@@ -179,7 +183,7 @@
   var heroScroll=document.querySelector('.hero-scroll');
   var video=document.getElementById('hero-video'), dlayer=document.getElementById('dlayer'), sticky=document.getElementById('sticky');
   var nav=document.getElementById('nav'), mover=document.getElementById('logoMover');
-  var logoIvory=mover.querySelector('.logo-ivory');
+  var logoIvory=mover.querySelector('.logo-ivory'), navIvory=nav.querySelector('.nav-ivory');
   var headline=document.getElementById('headline'), heat=document.getElementById('heat'), strap=document.getElementById('strap'), hint=document.getElementById('hint');
   var heatIvory=heat.querySelector('.heat-ivory');
 
@@ -208,16 +212,15 @@
     else if(p>=S1)  renderDither(lastImg, p<DO ? 1 : 1-inv(p,DO,1.0));
     if(p>=DI1 && p<=DO) targetTime = inv(p,DX,S1)*duration;
 
-    sticky.style.opacity = 1-inv(p,0.90,1.0);
     mover.style.transform = logoTransform(inv(p,0.06,0.30));
 
-    var lit=inv(p,DI1,DX+0.03);
-    logoIvory.style.opacity=lit; heatIvory.style.opacity=lit;
+    var lit=Math.min(inv(p,DI1,DX+0.03), 1-inv(p,S1,0.98));
+    logoIvory.style.opacity=lit; heatIvory.style.opacity=lit; navIvory.style.opacity=lit;
     var uic='rgb('+Math.round(lerp(8,250,lit))+','+Math.round(lerp(17,247,lit))+','+Math.round(lerp(27,230,lit))+')';
     strap.style.color=uic; hint.style.color=uic;
 
     nav.style.opacity=inv(p,0.22,0.34);
-    headline.style.opacity = Math.min(inv(p,0.54,0.68), 1-inv(p,0.80,0.88));
+    headline.style.opacity=inv(p,0.54,0.68);
     hint.style.opacity = (1-inv(p,0,0.04))*0.7;
   }
 
