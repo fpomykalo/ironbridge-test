@@ -31,6 +31,8 @@
 
   .hero-ui{ position:absolute; inset:0; z-index:5; pointer-events:none; }
   .hero-ui a, .hero-ui button{ pointer-events:auto; }
+  .chrome{ position:fixed; inset:0; z-index:55; pointer-events:none; }
+  .chrome a, .chrome button{ pointer-events:auto; }
 
   .nav{ position:absolute; top:30px; left:50%; transform:translateX(-50%); width:567px; max-width:88vw; opacity:0; }
   .nav img{ width:100%; height:auto; display:block; }
@@ -54,7 +56,7 @@
   .hint{ position:absolute; bottom:70px; left:50%; transform:translateX(-50%); font-size:11px; letter-spacing:.24em; text-transform:uppercase; opacity:.7; }
 
   /* ---------- CONTENT ---------- */
-  .content{ position:relative; z-index:1; }
+  .content{ position:relative; z-index:2; margin-top:-60vh; }
   .ivory{ background:var(--ivory); color:var(--iron); }
 
   .work{ padding:14vh 8vw 8vh; }
@@ -95,7 +97,7 @@
 <body>
 
   <svg class="goo-defs"><defs>
-    <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/>
+    <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/>
       <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"/></filter>
   </defs></svg>
 
@@ -112,15 +114,18 @@
       <div class="dither-layer" id="dlayer"><canvas id="dither" width="160" height="90"></canvas></div>
 
       <div class="hero-ui">
-        <div class="nav" id="nav"><img class="nav-dark" src="assets/Nav_Bar-dark.svg" alt="Ironbridge navigation"><img class="nav-ivory" src="assets/Nav_Bar.svg" alt=""></div>
-        <div class="logo-mover" id="logoMover"><div class="logo-inner"><img class="logo-dark" src="assets/Logo-dark.svg" alt="Ironbridge"><img class="logo-ivory" src="assets/Logo.svg" alt=""></div></div>
         <div class="headline" id="headline">Your bridge into AI.</div>
-        <div class="heat" id="heat"><img class="heat-dark" src="assets/Heat-dark.svg" alt="1300C white heat"><img class="heat-ivory" src="assets/Heat_Ticker.svg" alt=""></div>
-        <div class="strap" id="strap">The AI department for<br>the everyday economy.</div>
         <div class="hint" id="hint">Scroll</div>
       </div>
     </div>
   </section>
+
+  <div class="chrome">
+    <div class="nav" id="nav"><img class="nav-dark" src="assets/Nav_Bar-dark.svg" alt="Ironbridge navigation"><img class="nav-ivory" src="assets/Nav_Bar.svg" alt=""></div>
+    <div class="logo-mover" id="logoMover"><div class="logo-inner"><img class="logo-dark" src="assets/Logo-dark.svg" alt="Ironbridge"><img class="logo-ivory" src="assets/Logo.svg" alt=""></div></div>
+    <div class="heat" id="heat"><img class="heat-dark" src="assets/Heat-dark.svg" alt="1300C white heat"><img class="heat-ivory" src="assets/Heat_Ticker.svg" alt=""></div>
+    <div class="strap" id="strap">The AI department for<br>the everyday economy.</div>
+  </div>
 
   <main class="content">
     <div class="ivory">
@@ -194,7 +199,7 @@
   function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
   function lerp(a,b,t){ return a+(b-a)*t; }
   function inv(p,a,b){ return clamp((p-a)/(b-a),0,1); }
-  var targetTime=0;
+  var targetTime=0, uiLit=0;
   function heroProgress(){ var h=heroScroll.offsetHeight-window.innerHeight; return clamp((window.scrollY-heroScroll.offsetTop)/h,0,1); }
 
   function logoTransform(t){
@@ -214,7 +219,7 @@
 
     mover.style.transform = logoTransform(inv(p,0.06,0.30));
 
-    var lit=Math.min(inv(p,DI1,DX+0.03), 1-inv(p,S1,0.98));
+    var lit=Math.min(inv(p,0.095,0.20), 1-inv(p,S1,0.98)); uiLit=lit;
     logoIvory.style.opacity=lit; heatIvory.style.opacity=lit; navIvory.style.opacity=lit;
     var uic='rgb('+Math.round(lerp(8,250,lit))+','+Math.round(lerp(17,247,lit))+','+Math.round(lerp(27,230,lit))+')';
     strap.style.color=uic; hint.style.color=uic;
@@ -248,13 +253,27 @@
     if(half>0){ while(mx<=-half) mx+=half; while(mx>0) mx-=half; } track.style.transform='translateX('+mx+'px)'; requestAnimationFrame(marquee); }
   requestAnimationFrame(marquee);
 
-  // pixel cursor
-  var cv=document.getElementById('cursor'), cx=cv.getContext('2d'), pts=[], MAXAGE=40, SIZE=13;
-  function sizeC(){ cv.width=innerWidth; cv.height=innerHeight; } sizeC(); addEventListener('resize', sizeC);
-  addEventListener('mousemove', function(e){ pts.push({x:e.clientX,y:e.clientY,age:0}); });
-  function cursorFrame(){ cx.clearRect(0,0,cv.width,cv.height);
-    for(var i=pts.length-1;i>=0;i--){ var p=pts[i]; p.age++; if(p.age>MAXAGE){ pts.splice(i,1); continue; }
-      var a=1-p.age/MAXAGE, s=SIZE*a; cx.fillStyle='rgba(250,247,230,'+a+')'; cx.fillRect(p.x-s/2,p.y-s/2,s,s); }
+  // pixel-trail cursor: grid cells light under the cursor and fade over maxAge, merged by the goo filter
+  var cv=document.getElementById('cursor'), cx=cv.getContext('2d');
+  var CELL=44, cols=0, rows=0, ages=null, MAXAGE_MS=350;
+  function buildGrid(){ cv.width=innerWidth; cv.height=innerHeight;
+    CELL=Math.max(26, Math.round(Math.min(cv.width,cv.height)*0.06));
+    cols=Math.ceil(cv.width/CELL); rows=Math.ceil(cv.height/CELL);
+    ages=new Float32Array(cols*rows); for(var i=0;i<ages.length;i++) ages[i]=1e9; }
+  buildGrid(); addEventListener('resize', buildGrid);
+  function activate(px,py){ var c=Math.floor(px/CELL), r=Math.floor(py/CELL); if(c>=0&&c<cols&&r>=0&&r<rows) ages[r*cols+c]=0; }
+  var lmx=-1, lmy=-1;
+  addEventListener('mousemove', function(e){
+    if(lmx<0){ activate(e.clientX,e.clientY); }
+    else { var d=Math.hypot(e.clientX-lmx,e.clientY-lmy), steps=Math.max(1,Math.ceil(d/(CELL*0.5)));
+      for(var i=0;i<=steps;i++){ var t=i/steps; activate(lmx+(e.clientX-lmx)*t, lmy+(e.clientY-lmy)*t); } }
+    lmx=e.clientX; lmy=e.clientY;
+  });
+  var last=performance.now();
+  function cursorFrame(now){ var dt=now-last; last=now; cx.clearRect(0,0,cv.width,cv.height);
+    var r=Math.round(lerp(8,250,uiLit)), g=Math.round(lerp(17,247,uiLit)), b=Math.round(lerp(27,230,uiLit)), pre='rgba('+r+','+g+','+b+',';
+    for(var idx=0; idx<ages.length; idx++){ var a=ages[idx]; if(a>=MAXAGE_MS) continue; ages[idx]=a+dt;
+      cx.fillStyle=pre+(1-a/MAXAGE_MS)+')'; cx.fillRect((idx%cols)*CELL, ((idx/cols)|0)*CELL, CELL-1, CELL-1); }
     requestAnimationFrame(cursorFrame); }
   requestAnimationFrame(cursorFrame);
 
