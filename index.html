@@ -109,6 +109,7 @@
     <div class="logo-mover" id="logoMover"><div class="logo-inner">
       <img class="lg lg-front" id="lgFront" src="assets/Logo-full-dark.svg" alt="Ironbridge">
       <img class="lg lg-wi" id="lgWI" src="assets/Logo.svg" alt="">
+      <img class="lg lg-wd" id="lgWD" src="assets/Logo-dark.svg" alt="">
     </div></div>
     <div class="heat" id="heat"><img class="heat-dark" src="assets/Heat-dark.svg" alt="1300C white heat"><img class="heat-ivory" src="assets/Heat_Ticker.svg" alt=""></div>
     <div class="strap" id="strap">The AI department for<br>the everyday economy.</div>
@@ -165,7 +166,7 @@
   var heroScroll=document.querySelector('.hero-scroll');
   var video=document.getElementById('hero-video'), dlayer=document.getElementById('dlayer');
   var nav=document.getElementById('nav'), navIvory=nav.querySelector('.nav-ivory'), mover=document.getElementById('logoMover');
-  var lgFront=document.getElementById('lgFront'), lgWI=document.getElementById('lgWI');
+  var lgFront=document.getElementById('lgFront'), lgWI=document.getElementById('lgWI'), lgWD=document.getElementById('lgWD');
   var headline=document.getElementById('headline'), heat=document.getElementById('heat'), heatIvory=heat.querySelector('.heat-ivory');
   var strap=document.getElementById('strap'), hint=document.getElementById('hint');
 
@@ -195,9 +196,10 @@
     mover.style.transform = logoTransform(inv(p,0.06,0.30));
 
     var lit=Math.min(inv(p,0.095,0.20), 1-inv(p,S1,0.98)); uiLit=lit;
-    var d=inv(p,0.095,0.22);                          // bracketed dark -> plain bone wordmark, then stays
+    var d=inv(p,0.095,0.22), endDark=inv(p,S1,0.98);  // d: bracketed->wordmark; endDark: bone->dark at the ivory end
     lgFront.style.opacity = 1-d;                      // dark bracketed, only at the start
-    lgWI.style.opacity    = d;                        // bone wordmark from descent through How we work
+    lgWI.style.opacity    = d*(1-endDark);            // bone wordmark over the footage
+    lgWD.style.opacity    = d*endDark;                // dark wordmark once the dither goes away
 
     heatIvory.style.opacity=lit; navIvory.style.opacity=lit;
     var uic='rgb('+Math.round(lerp(8,250,lit))+','+Math.round(lerp(17,247,lit))+','+Math.round(lerp(27,230,lit))+')';
