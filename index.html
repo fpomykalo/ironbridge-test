@@ -26,8 +26,15 @@
   #hero-video, #dither, .backdrop{ position:absolute; inset:0; width:100%; height:100%; }
   .backdrop{ background:var(--iron); }
   #hero-video{ object-fit:cover; z-index:1; }
-  .dither-layer{ position:absolute; inset:0; z-index:2; background:var(--ivory); }
+  .dither-layer{ position:absolute; inset:0; z-index:4; }
   #dither{ object-fit:cover; image-rendering:pixelated; }
+  .ipanel{ position:absolute; inset:0; z-index:2; background:var(--ivory); opacity:0; }
+  .reveal{ position:absolute; inset:0; z-index:3; display:flex; align-items:center; justify-content:center; opacity:0; }
+  .reveal .work{ padding:0 8vw; }
+  .reveal .work h2{ margin-bottom:6vh; }
+  .brk{ position:absolute; top:0; height:100%; width:9px; border:2px solid #08111B; }
+  .brk-l{ left:-26px; border-right:none; border-radius:6px 0 0 6px; }
+  .brk-r{ right:-26px; border-left:none; border-radius:0 6px 6px 0; }
 
   .hero-ui{ position:absolute; inset:0; z-index:5; pointer-events:none; }
   .hero-ui a, .hero-ui button{ pointer-events:auto; }
@@ -56,7 +63,7 @@
   .hint{ position:absolute; bottom:70px; left:50%; transform:translateX(-50%); font-size:11px; letter-spacing:.24em; text-transform:uppercase; opacity:.7; }
 
   /* ---------- CONTENT ---------- */
-  .content{ position:relative; z-index:2; margin-top:-60vh; }
+  .content{ position:relative; z-index:2; }
   .ivory{ background:var(--ivory); color:var(--iron); }
 
   .work{ padding:14vh 8vw 8vh; }
@@ -97,7 +104,7 @@
 <body>
 
   <svg class="goo-defs"><defs>
-    <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="6" result="b"/>
+    <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="b"/>
       <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"/></filter>
   </defs></svg>
 
@@ -111,6 +118,17 @@
       <video id="hero-video" muted playsinline preload="auto" poster="assets/frame_first.jpg">
         <source src="assets/river_scrub.mp4" type="video/mp4">
       </video>
+      <div class="ipanel" id="ipanel"></div>
+      <div class="reveal" id="reveal">
+        <section class="work">
+          <h2>How we work</h2>
+          <div class="steps">
+            <div class="step"><div class="t"><b>1</b>Discover.</div><p>We map where AI helps in your firm, and where to start.</p></div>
+            <div class="step"><div class="t"><b>2</b>Deploy.</div><p>We build into your systems and your permissions, on site with your team.</p></div>
+            <div class="step"><div class="t"><b>3</b>Deepen.</div><p>We improve what is live, enable your team, and build the next one faster than the last.</p></div>
+          </div>
+        </section>
+      </div>
       <div class="dither-layer" id="dlayer"><canvas id="dither" width="160" height="90"></canvas></div>
 
       <div class="hero-ui">
@@ -122,21 +140,13 @@
 
   <div class="chrome">
     <div class="nav" id="nav"><img class="nav-dark" src="assets/Nav_Bar-dark.svg" alt="Ironbridge navigation"><img class="nav-ivory" src="assets/Nav_Bar.svg" alt=""></div>
-    <div class="logo-mover" id="logoMover"><div class="logo-inner"><img class="logo-dark" src="assets/Logo-dark.svg" alt="Ironbridge"><img class="logo-ivory" src="assets/Logo.svg" alt=""></div></div>
+    <div class="logo-mover" id="logoMover"><div class="logo-inner"><span class="brk brk-l" id="brkL"></span><img class="logo-dark" src="assets/Logo-dark.svg" alt="Ironbridge"><img class="logo-ivory" src="assets/Logo.svg" alt=""><span class="brk brk-r" id="brkR"></span></div></div>
     <div class="heat" id="heat"><img class="heat-dark" src="assets/Heat-dark.svg" alt="1300C white heat"><img class="heat-ivory" src="assets/Heat_Ticker.svg" alt=""></div>
     <div class="strap" id="strap">The AI department for<br>the everyday economy.</div>
   </div>
 
   <main class="content">
     <div class="ivory">
-      <section class="work">
-        <h2>How we work</h2>
-        <div class="steps">
-          <div class="step"><div class="t"><b>1</b>Discover.</div><p>We map where AI helps in your firm, and where to start.</p></div>
-          <div class="step"><div class="t"><b>2</b>Deploy.</div><p>We build into your systems and your permissions, on site with your team.</p></div>
-          <div class="step"><div class="t"><b>3</b>Deepen.</div><p>We improve what is live, enable your team, and build the next one faster than the last.</p></div>
-        </div>
-      </section>
       <div class="ticker-wrap">
         <div class="ticker-lead">Built &amp; supported by leading AI operators:</div>
         <div class="marquee"><div class="mtrack" id="mtrack"></div></div>
@@ -187,6 +197,7 @@
 
   var heroScroll=document.querySelector('.hero-scroll');
   var video=document.getElementById('hero-video'), dlayer=document.getElementById('dlayer'), sticky=document.getElementById('sticky');
+  var ipanel=document.getElementById('ipanel'), reveal=document.getElementById('reveal'), brkL=document.getElementById('brkL'), brkR=document.getElementById('brkR');
   var nav=document.getElementById('nav'), mover=document.getElementById('logoMover');
   var logoIvory=mover.querySelector('.logo-ivory'), navIvory=nav.querySelector('.nav-ivory');
   var headline=document.getElementById('headline'), heat=document.getElementById('heat'), strap=document.getElementById('strap'), hint=document.getElementById('hint');
@@ -212,12 +223,14 @@
 
   function applyHero(p){
     var dop = p<DI1 ? 1 : p<DX ? 1-inv(p,DI1,DX) : p<S1 ? 0 : p<DO ? inv(p,S1,DO) : 1;
-    dlayer.style.opacity=dop;
+    dlayer.style.opacity=dop; ipanel.style.opacity=dop;
+    reveal.style.opacity=inv(p,S1,DO);
     if(p<DX)        renderDither(firstImg, inv(p,DI0,DI1));
     else if(p>=S1)  renderDither(lastImg, p<DO ? 1 : 1-inv(p,DO,1.0));
     if(p>=DI1 && p<=DO) targetTime = inv(p,DX,S1)*duration;
 
     mover.style.transform = logoTransform(inv(p,0.06,0.30));
+    var bo=1-inv(p,0.06,0.18); brkL.style.opacity=bo; brkR.style.opacity=bo;
 
     var lit=Math.min(inv(p,0.095,0.20), 1-inv(p,S1,0.98)); uiLit=lit;
     logoIvory.style.opacity=lit; heatIvory.style.opacity=lit; navIvory.style.opacity=lit;
@@ -257,7 +270,7 @@
   var cv=document.getElementById('cursor'), cx=cv.getContext('2d');
   var CELL=44, cols=0, rows=0, ages=null, MAXAGE_MS=350;
   function buildGrid(){ cv.width=innerWidth; cv.height=innerHeight;
-    CELL=Math.max(26, Math.round(Math.min(cv.width,cv.height)*0.06));
+    CELL=Math.max(3, Math.round(Math.min(cv.width,cv.height)*0.006));
     cols=Math.ceil(cv.width/CELL); rows=Math.ceil(cv.height/CELL);
     ages=new Float32Array(cols*rows); for(var i=0;i<ages.length;i++) ages[i]=1e9; }
   buildGrid(); addEventListener('resize', buildGrid);
