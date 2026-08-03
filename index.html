@@ -20,10 +20,6 @@
   #cursor{ position:fixed; inset:0; z-index:70; pointer-events:none; filter:url(#goo); }
   .goo-defs{ position:absolute; width:0; height:0; }
 
-  .devnote{ position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:60;
-    background:rgba(8,17,27,.72); color:var(--ivory); font-size:10px; letter-spacing:.05em;
-    padding:4px 12px; border-radius:20px; white-space:nowrap; pointer-events:none; }
-
   /* ---------- HERO ---------- */
   .hero-scroll{ position:relative; height:560vh; z-index:1; }
   .hero-sticky{ position:sticky; top:0; height:100vh; overflow:hidden; }
@@ -80,17 +76,6 @@
   .gradient-area{ background:linear-gradient(180deg, var(--ivory) 0%, var(--amber) 46%, var(--rust) 100%); min-height:150vh; padding-top:20vh; }
   .note{ text-align:center; padding:0 8vw; }
   .note span{ display:inline-block; border:1px dashed rgba(8,17,27,.35); border-radius:12px; padding:16px 22px; font-size:13px; color:#3a4450; }
-
-  /* live dither panel */
-  .dpanel{ position:fixed; right:16px; bottom:16px; z-index:80; width:210px; background:rgba(8,17,27,.92); border:1px solid var(--line); border-radius:12px; color:var(--ivory); padding:12px 14px; backdrop-filter:blur(6px); font-size:12px; }
-  .dpanel h4{ font-family:var(--charger); text-transform:uppercase; letter-spacing:.16em; font-size:13px; font-weight:400; display:flex; justify-content:space-between; align-items:center; }
-  .dpanel h4 button{ background:none; border:0; color:var(--amber); cursor:pointer; font-size:15px; line-height:1; }
-  .dpanel .row{ margin-top:12px; }
-  .dpanel label{ display:flex; justify-content:space-between; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.12em; font-size:10px; }
-  .dpanel .val{ color:var(--amber); }
-  .dpanel input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:3px; background:#2b3c52; border-radius:3px; outline:none; }
-  .dpanel input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:var(--ivory); border:3px solid var(--rust); cursor:pointer; }
-  .dpanel.min .row{ display:none; }
 </style>
 </head>
 <body>
@@ -101,7 +86,6 @@
   </defs></svg>
 
   <canvas id="cursor"></canvas>
-  <div class="devnote">This won't be visible in the final design, it's an iteration tool for us before going live</div>
 
   <img id="src-first" src="assets/frame_first.jpg" hidden alt="">
   <img id="src-last"  src="assets/frame_last.jpg"  hidden alt="">
@@ -125,7 +109,6 @@
     <div class="logo-mover" id="logoMover"><div class="logo-inner">
       <img class="lg lg-front" id="lgFront" src="assets/Logo-full-dark.svg" alt="Ironbridge">
       <img class="lg lg-wi" id="lgWI" src="assets/Logo.svg" alt="">
-      <img class="lg lg-wd" id="lgWD" src="assets/Logo-dark.svg" alt="">
     </div></div>
     <div class="heat" id="heat"><img class="heat-dark" src="assets/Heat-dark.svg" alt="1300C white heat"><img class="heat-ivory" src="assets/Heat_Ticker.svg" alt=""></div>
     <div class="strap" id="strap">The AI department for<br>the everyday economy.</div>
@@ -148,12 +131,6 @@
     </div>
     <div class="gradient-area"><div class="note"><span>Sections below continue from here. Send more Figma frames and I will keep building down the page.</span></div></div>
   </main>
-
-  <div class="dpanel" id="dpanel">
-    <h4>Dither <button id="dtoggle" title="collapse">–</button></h4>
-    <div class="row"><label>Grain <span class="val" id="vGrain">300</span></label><input type="range" id="pGrain" min="70" max="300" step="10" value="300"></div>
-    <div class="row"><label>Texture <span class="val" id="vTex">50</span></label><input type="range" id="pTex" min="0" max="140" step="5" value="50"></div>
-  </div>
 
 <script>
 (function(){
@@ -188,7 +165,7 @@
   var heroScroll=document.querySelector('.hero-scroll');
   var video=document.getElementById('hero-video'), dlayer=document.getElementById('dlayer');
   var nav=document.getElementById('nav'), navIvory=nav.querySelector('.nav-ivory'), mover=document.getElementById('logoMover');
-  var lgFront=document.getElementById('lgFront'), lgWI=document.getElementById('lgWI'), lgWD=document.getElementById('lgWD');
+  var lgFront=document.getElementById('lgFront'), lgWI=document.getElementById('lgWI');
   var headline=document.getElementById('headline'), heat=document.getElementById('heat'), heatIvory=heat.querySelector('.heat-ivory');
   var strap=document.getElementById('strap'), hint=document.getElementById('hint');
 
@@ -218,10 +195,9 @@
     mover.style.transform = logoTransform(inv(p,0.06,0.30));
 
     var lit=Math.min(inv(p,0.095,0.20), 1-inv(p,S1,0.98)); uiLit=lit;
-    var brk=1-inv(p,0.06,0.20);                       // 1 = bracketed, 0 = plain wordmark
-    lgFront.style.opacity = brk*(1-lit);              // dark bracketed (ivory start)
-    lgWI.style.opacity    = (1-brk)*lit;              // ivory wordmark (over footage)
-    lgWD.style.opacity    = (1-brk)*(1-lit);          // dark wordmark (ivory end)
+    var d=inv(p,0.095,0.22);                          // bracketed dark -> plain bone wordmark, then stays
+    lgFront.style.opacity = 1-d;                      // dark bracketed, only at the start
+    lgWI.style.opacity    = d;                        // bone wordmark from descent through How we work
 
     heatIvory.style.opacity=lit; navIvory.style.opacity=lit;
     var uic='rgb('+Math.round(lerp(8,250,lit))+','+Math.round(lerp(17,247,lit))+','+Math.round(lerp(27,230,lit))+')';
@@ -279,12 +255,6 @@
       cx.fillStyle=pre+(1-a/MAXAGE_MS)+')'; cx.fillRect((idx%cols)*CELL, ((idx/cols)|0)*CELL, CELL-1, CELL-1); }
     requestAnimationFrame(cursorFrame); }
   requestAnimationFrame(cursorFrame);
-
-  // dither panel
-  var pGrain=document.getElementById('pGrain'), pTex=document.getElementById('pTex'), vGrain=document.getElementById('vGrain'), vTex=document.getElementById('vTex');
-  pGrain.addEventListener('input', function(){ vGrain.textContent=pGrain.value; setGrain(+pGrain.value); applyHero(heroProgress()); });
-  pTex.addEventListener('input', function(){ vTex.textContent=pTex.value; AMP=+pTex.value; applyHero(heroProgress()); });
-  document.getElementById('dtoggle').addEventListener('click', function(){ var d=document.getElementById('dpanel'); d.classList.toggle('min'); this.textContent=d.classList.contains('min')?'+':'–'; });
 })();
 </script>
 </body>
