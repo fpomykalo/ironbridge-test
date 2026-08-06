@@ -47,7 +47,8 @@
   .hero-ui{ position:absolute; inset:0; z-index:6; pointer-events:none; }
 
   .chrome{ position:fixed; inset:0; z-index:55; pointer-events:none; }
-  .chrome a, .chrome button{ pointer-events:auto; }
+  .chrome a, .chrome button, .chrome .nitem{ pointer-events:auto; }
+  .nav .nbrk{ transition:opacity .4s; }
 
   .nav{ position:absolute; top:30px; left:50%; transform:translateX(-50%); height:40px; opacity:0;
     display:flex; align-items:center; gap:52px; padding:0 28px; color:var(--ivory); }
@@ -123,8 +124,8 @@
   .how-head h2{ color:var(--iron); }
   .how-run{ position:relative; height:320vh; }
   .how-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; }
-  .how-card{ position:relative; width:min(1279px, calc(100vw - 160px)); aspect-ratio:1279/720; max-height:88vh;
-    border-radius:10px; overflow:hidden; background:#0c1622; }
+  .how-card{ position:relative; width:min(1279px, calc(100vw - 160px)); aspect-ratio:1279/720; max-height:100vh;
+    border-radius:10px; overflow:hidden; background:#0c1622; will-change:width,height; }
   @media(max-width:900px){ .how-card{ width:calc(100vw - 48px); } }
   .how-card .bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .how-card .veil{ position:absolute; inset:0; background:linear-gradient(180deg,rgba(8,17,27,.30),rgba(8,17,27,.60)); }
@@ -237,8 +238,9 @@
 
   /* FOOTER — the gradient simply ends; bracketed tagline centred on screen */
   .foot{ position:relative; background:transparent; color:var(--ivory); min-height:100vh;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .foot .inner{ max-width:1004px; margin:0 auto; padding:0 40px; text-align:center; }
+    display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
+  .foot-wave{ position:absolute; left:0; bottom:0; width:100%; height:50%; pointer-events:none; display:block; }
+  .foot .inner{ position:relative; z-index:1; max-width:1004px; margin:0 auto; padding:0 40px; text-align:center; }
   .foot .ftag{ position:relative; display:inline-block; font-family:var(--serif); font-weight:400;
     font-size:var(--fs-h2); line-height:1; letter-spacing:0; }
   .foot .brk{ position:absolute; top:50%; transform:translateY(-50%); height:170px; width:auto; opacity:.92; }
@@ -341,7 +343,7 @@
       </div>
 
       <!-- GALVANISE — sticky stage, scrubbed capability list -->
-      <div class="galv-head wrap"><h2 class="h2 reveal">Galvanise change across your firm.</h2></div>
+      <div class="galv-head wrap" id="galvHead"><h2 class="h2 reveal">Galvanise change across your firm.</h2></div>
       <div class="galv-run" id="galvRun">
         <div class="galv-stick">
           <div class="galv-inner">
@@ -506,6 +508,20 @@
   var navItems={};
   nav.querySelectorAll('[data-nav]').forEach(function(el){ navItems[el.getAttribute('data-nav')]=el; });
   var navBLx=NaN, navBRx=NaN, ncta=nav.querySelector('.ncta');
+  var galvHead=document.getElementById('galvHead'), footEl=document.querySelector('.foot');
+  // nav anchors: About -> the statement, The Department -> galvanise, The Knowledge -> the knowledge section
+  (function(){
+    var targets={
+      about: function(){ return heroScroll.offsetHeight - innerHeight; },
+      department: function(){ return elTop(galvHead) - 40; },
+      knowledge: function(){ return elTop(document.querySelector('.know')) - 40; }
+    };
+    Object.keys(navItems).forEach(function(k){
+      navItems[k].addEventListener('click', function(){
+        window.scrollTo({ top:targets[k](), behavior:'smooth' });
+      });
+    });
+  })();
   var lgFront=document.getElementById('lgFront'), lgWI=document.getElementById('lgWI'), lgWD=document.getElementById('lgWD');
   var headline=document.getElementById('headline');
   var heat=document.getElementById('heat'), heatFill=document.getElementById('heatFill');
@@ -598,7 +614,7 @@
   var mx=0;
 
   /* ---------- how we work: scrubbed steps ---------- */
-  var howRun=document.getElementById('howRun');
+  var howRun=document.getElementById('howRun'), howCard=document.querySelector('.how-card');
   var howStep=document.getElementById('howStep'), howBody=document.getElementById('howBody');
   var howNum=document.getElementById('howNum'), howWord=document.getElementById('howWord');
   var steps=[
@@ -716,9 +732,10 @@
     strap.style.color=uic; heat.style.color=uic; heatFill.style.background=uic; nav.style.color=uic;
     ncta.classList.toggle('alt', lastForgeF>=0.15 && lastForgeF<=0.44);  // bone pill over the rust band
 
-    /* nav brackets track the current section */
+    /* nav brackets: hidden until the hero dither is done, About -> Department at
+       galvanise -> Knowledge at the knowledge section, gone at the footer */
     var mid=sy+vh*0.5, navKey;
-    if(mid < elTop(namesHead)) navKey='about';
+    if(mid < elTop(galvHead)) navKey='about';
     else if(mid < elTop(knowSection)) navKey='department';
     else navKey='knowledge';
     var act=navItems[navKey];
@@ -729,6 +746,8 @@
       navBLx+=(tl-navBLx)*Math.min(1,dt*9); navBRx+=(tr2-navBRx)*Math.min(1,dt*9);
       navBrkL.style.left=navBLx+'px'; navBrkR.style.left=navBRx+'px';
     }
+    var brkVis = (p>=DEND ? 1 : 0) * (mid < elTop(footEl) ? 1 : 0);
+    navBrkL.style.opacity=brkVis; navBrkR.style.opacity=brkVis;
     nav.style.opacity=inv(p,0.22,0.34);
     headline.style.opacity=inv(p,0.54,0.68);
 
@@ -762,9 +781,17 @@
     mx += (-lt*span-mx)*Math.min(1,dt*8);
     track.style.transform='translateX('+mx+'px)';
 
-    /* how we work: scrub the three steps */
+    /* how we work: the card grows from its resting size to fill the screen,
+       the steps scrub while full-bleed, then the sticky release slides it up */
     var ht=elTop(howRun), hp=clamp((sy-ht)/(howRun.offsetHeight-vh),0,1);
-    var seg=Math.min(2.999,hp*3), idx=Math.floor(seg), local2=seg-idx;
+    var g=inv(hp,0,0.18); g=g*g*(3-2*g);
+    var vw2=innerWidth;
+    var wBase=vw2<=900 ? vw2-48 : Math.min(1279, vw2-160);
+    var hBase=Math.min(wBase*720/1279, vh);
+    howCard.style.width=Math.round(lerp(wBase,vw2,g))+'px';
+    howCard.style.height=Math.round(lerp(hBase,vh,g))+'px';
+    howCard.style.borderRadius=Math.round(10*(1-g))+'px';
+    var seg=Math.min(2.999, inv(hp,0.18,1)*3), idx=Math.floor(seg), local2=seg-idx;
     if(idx!==hi){ hi=idx; var s=steps[hi]; howNum.textContent=s[0]; howWord.textContent=s[1]; howBody.textContent=s[2]; }
     var alpha=1;                                              // fade only across step boundaries, never on entry/exit
     if(idx>0 && local2<0.12) alpha=local2/0.12;
@@ -828,6 +855,74 @@
       cx.fillStyle=pre+(1-a/MAXAGE_MS)+')'; cx.fillRect((idx2%cols)*CELL, ((idx2/cols)|0)*CELL, CELL-1, CELL-1); }
     requestAnimationFrame(cursorFrame); }
   requestAnimationFrame(cursorFrame);
+
+  /* ---------- footer dithered wave (WebGL2, bone @10%, 10% speed) ---------- */
+  (function(){
+    var cv=document.createElement('canvas'); cv.className='foot-wave'; cv.setAttribute('aria-hidden','true');
+    footEl.insertBefore(cv, footEl.firstChild);
+    var gl=cv.getContext('webgl2',{antialias:false, alpha:true});
+    if(!gl) return;
+    var VERT='#version 300 es\nin vec2 a_pos;\nvoid main(){ gl_Position=vec4(a_pos,0.0,1.0); }';
+    var FRAG='#version 300 es\nprecision highp float;\n'+
+    'uniform vec2 u_resolution; uniform float u_time; uniform vec2 u_pointer; uniform float u_ripple; uniform float u_pxSize; uniform vec3 u_fg; uniform float u_alpha;\n'+
+    'out vec4 fragColor;\n'+
+    'const float BAYER[64]=float[64](0.0,48.0,12.0,60.0,3.0,51.0,15.0,63.0,32.0,16.0,44.0,28.0,35.0,19.0,47.0,31.0,8.0,56.0,4.0,52.0,11.0,59.0,7.0,55.0,40.0,24.0,36.0,20.0,43.0,27.0,39.0,23.0,2.0,50.0,14.0,62.0,1.0,49.0,13.0,61.0,34.0,18.0,46.0,30.0,33.0,17.0,45.0,29.0,10.0,58.0,6.0,54.0,9.0,57.0,5.0,53.0,42.0,26.0,38.0,22.0,41.0,25.0,37.0,21.0);\n'+
+    'float bayer8(vec2 cell){ int x=int(mod(cell.x,8.0)); int y=int(mod(cell.y,8.0)); return BAYER[y*8+x]/64.0; }\n'+
+    'float waveField(vec2 p, float t){ float w=0.0; w+=sin(p.x*3.0+t*1.15); w+=sin(p.x*1.7-p.y*2.3+t*0.9); w+=0.75*sin(p.y*4.0+p.x*1.1-t*1.7); w+=0.55*sin((p.x+p.y)*2.4+t*0.5); return w*0.28; }\n'+
+    'void main(){ vec2 res=u_resolution; float px=max(u_pxSize,1.0);\n'+
+    '  vec2 cell=floor(gl_FragCoord.xy/px); vec2 cellPx=cell*px+0.5*px;\n'+
+    '  vec2 uv=(cellPx-0.5*res)/res.y;\n'+
+    '  float w=waveField(uv,u_time);\n'+
+    '  vec2 m=(u_pointer-0.5*res)/res.y; float d=length(uv-m);\n'+
+    '  w+=u_ripple*0.6*sin(d*16.0-u_time*3.2)*exp(-d*2.2);\n'+
+    '  float horizon=uv.y*1.35+0.4*w+0.35;\n'+
+    '  float fill=smoothstep(0.55,-0.55,horizon);\n'+
+    '  float intensity=clamp(mix(fill,0.5+0.5*w,0.3)-0.12,0.0,1.0);\n'+
+    '  float bit=step(bayer8(cell),intensity);\n'+
+    '  float a=bit*u_alpha;\n'+
+    '  fragColor=vec4(u_fg*a, a); }';   // premultiplied: transparent where the dither is off
+    function compile(type,src){ var sh=gl.createShader(type); gl.shaderSource(sh,src); gl.compileShader(sh);
+      if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){ gl.deleteShader(sh); return null; } return sh; }
+    var vert=compile(gl.VERTEX_SHADER,VERT), frag=compile(gl.FRAGMENT_SHADER,FRAG);
+    if(!vert||!frag) return;
+    var prog=gl.createProgram(); gl.attachShader(prog,vert); gl.attachShader(prog,frag); gl.linkProgram(prog);
+    if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) return;
+    gl.useProgram(prog);
+    var buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+    var aPos=gl.getAttribLocation(prog,'a_pos'); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
+    function u(n){ return gl.getUniformLocation(prog,n); }
+    var uRes=u('u_resolution'), uTime=u('u_time'), uPtr=u('u_pointer'), uRip=u('u_ripple'), uPx=u('u_pxSize');
+    gl.uniform3fv(u('u_fg'), new Float32Array([250/255,247/255,230/255]));   // bone
+    gl.uniform1f(u('u_alpha'), 0.10);                                        // 10% transparency
+    var dpr=1, CELL=3;
+    function resize(){ dpr=Math.min(window.devicePixelRatio||1,2);
+      var w=Math.max(1,Math.round(cv.clientWidth*dpr)), h=Math.max(1,Math.round(cv.clientHeight*dpr));
+      if(cv.width===w && cv.height===h) return;
+      cv.width=w; cv.height=h; gl.viewport(0,0,w,h); gl.uniform2f(uRes,w,h); gl.uniform1f(uPx,CELL*dpr); }
+    addEventListener('resize',resize); resize();
+    var ptr={x:cv.width/2,y:cv.height/2}, tgt={x:ptr.x,y:ptr.y}, ripple=0, rippleTarget=0;
+    var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!reduce){
+      footEl.addEventListener('pointermove', function(e){
+        var rect=cv.getBoundingClientRect();
+        tgt.x=(e.clientX-rect.left)*dpr; tgt.y=(rect.height-(e.clientY-rect.top))*dpr;
+        rippleTarget=1;
+      });
+      footEl.addEventListener('pointerleave', function(){ rippleTarget=0; });
+    }
+    var start=performance.now();
+    function draw(now){
+      var t=(now-start)*0.0001;                                              // 10% of the reference speed
+      ptr.x+=(tgt.x-ptr.x)*0.12; ptr.y+=(tgt.y-ptr.y)*0.12;
+      ripple+=(rippleTarget-ripple)*0.06;
+      gl.uniform1f(uTime,t); gl.uniform2f(uPtr,ptr.x,ptr.y); gl.uniform1f(uRip,ripple);
+      gl.drawArrays(gl.TRIANGLES,0,6);
+      requestAnimationFrame(draw);
+    }
+    if(reduce){ gl.uniform1f(uTime,2.0); gl.uniform2f(uPtr,cv.width/2,cv.height/2); gl.uniform1f(uRip,0); gl.drawArrays(gl.TRIANGLES,0,6); }
+    else requestAnimationFrame(draw);
+  })();
 
   /* ---------- scroll reveals ---------- */
   var io = new IntersectionObserver(function(entries){
