@@ -37,6 +37,9 @@
   #hero-video{ object-fit:cover; z-index:1; }
   .dither-layer{ position:absolute; inset:0; z-index:2; background:var(--ivory); }
   #dither{ object-fit:cover; image-rendering:pixelated; }
+  .hero-tex{ position:absolute; inset:0; z-index:1; pointer-events:none; }
+  .hero-vignette{ background:url('assets/images/vignette.png') center/100% 100% no-repeat; }
+  .hero-noise{ background:url('assets/images/noise.png'); background-size:640px auto; opacity:.4; mix-blend-mode:overlay; }
 
   .hero-ui{ position:absolute; inset:0; z-index:5; pointer-events:none; }
   .chrome{ position:fixed; inset:0; z-index:55; pointer-events:none; }
@@ -68,12 +71,16 @@
   /* ---------- CONTENT (slides up over the hero) ---------- */
   .content{ position:relative; z-index:2; margin-top:-60vh; }
   /* the forge: one continuous heat-then-cool gradient behind every section */
-  .forge{ color:var(--iron);
-    background:linear-gradient(180deg,
+  .forge{ color:var(--iron); position:relative; background-color:#faf7e6;
+    background-image:url('assets/images/noise.png'),
+      linear-gradient(180deg,
       #faf7e6 0%, #faf7e6 6%, #f4d29a 12%, #f0b976 17%,
       #e07d43 24%, #cf512b 29%, #c5543a 37%, #bd6a5a 45%,
       #c69a86 51%, #cbbfb0 56%, #c3c4c9 61%, #a2a8c6 68%,
-      #7c84b6 76%, #5b63a0 84%, #3a4274 92%, #1c2440 100%); }
+      #7c84b6 76%, #5b63a0 84%, #3a4274 92%, #1c2440 100%);
+    background-size:640px auto, 100% 100%;
+    background-repeat:repeat, no-repeat;
+    background-blend-mode:overlay, normal; }
   .wrap{ max-width:1280px; margin:0 auto; padding:0 80px; }
   @media(max-width:900px){ .wrap{ padding:0 24px; } }
   .reveal{ opacity:0; transform:translateY(26px); transition:opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
@@ -154,7 +161,8 @@
   .know-left .krow:first-of-type{ border-top:0; padding-top:0; }
   .krow-head, .krow.simple{ display:flex; align-items:center; justify-content:space-between;
     font-family:var(--sans); font-weight:700; font-size:20px; line-height:24px; color:var(--iron); }
-  .krow .arw{ opacity:.6; font-weight:400; }
+  .krow .arw{ opacity:.65; display:flex; align-items:center; }
+  .krow .arw img{ width:13px; height:13px; display:block; }
   .krow-body{ margin-top:14px; font-size:14px; line-height:20px; color:var(--iron); max-width:44ch; }
   .know-media{ position:relative; border-radius:8px; overflow:hidden; background:#0c1622; aspect-ratio:740/416; }
   .know-media img, .know-media video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
@@ -222,6 +230,8 @@
       <video id="hero-video" muted playsinline preload="auto" poster="assets/frame_first.jpg">
         <source src="assets/river_scrub.mp4" type="video/mp4">
       </video>
+      <div class="hero-tex hero-vignette"></div>
+      <div class="hero-tex hero-noise"></div>
       <div class="dither-layer" id="dlayer"><canvas id="dither" width="160" height="90"></canvas></div>
       <div class="hero-ui">
         <div class="headline" id="headline"><span class="hl">Meet your new<br>AI Department.</span><span class="hsub">Built for the everyday economy.</span></div>
@@ -313,12 +323,12 @@
           <div class="know-col know-left reveal">
             <div class="cap"><span class="eyebrow">stages</span></div>
             <div class="krow">
-              <div class="krow-head"><span>Your firm already knows.</span><span class="arw">&#8599;</span></div>
+              <div class="krow-head"><span>Your firm already knows.</span><span class="arw"><img src="assets/svg/arrow_dark.svg" alt=""></span></div>
               <p class="krow-body">Your firm already knows how to win this moment. The problem is where that knowledge lives: scattered across systems, documents and inboxes, and in your best people&#39;s heads.</p>
             </div>
-            <div class="krow simple"><span>A single interface.</span><span class="arw">&#8599;</span></div>
-            <div class="krow simple"><span>Model agnostic.</span><span class="arw">&#8599;</span></div>
-            <div class="krow simple"><span>The five verbs.</span><span class="arw">&#8599;</span></div>
+            <div class="krow simple"><span>A single interface.</span><span class="arw"><img src="assets/svg/arrow_dark.svg" alt=""></span></div>
+            <div class="krow simple"><span>Model agnostic.</span><span class="arw"><img src="assets/svg/arrow_dark.svg" alt=""></span></div>
+            <div class="krow simple"><span>The five verbs.</span><span class="arw"><img src="assets/svg/arrow_dark.svg" alt=""></span></div>
           </div>
           <div class="know-col know-right reveal">
             <div class="cap"><span class="eyebrow">knowledge</span></div>
