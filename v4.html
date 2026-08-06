@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ironbridge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
+<style>
+  @font-face{ font-family:'Charger'; src:url('assets/ChargerV2-RegularCondensed.ttf') format('truetype'); font-weight:400; font-display:swap; }
+  :root{
+    --iron:#08111B; --rust:#cf512b; --amber:#f0b976; --ivory:#faf7e6; --indigo:#41488a;
+    --sans:'Geist', system-ui, -apple-system, sans-serif;
+    --serif:'Charger', 'Arial Narrow', Georgia, serif;
+    /* Figma type scale (@1440): display 140/120 · list 120/90 · h2 70/70 · body 14/20 · note 20/24 · eyebrow 8-10/1.6px */
+    --fs-display: clamp(46px, 9.72vw, 140px);
+    --fs-list:    clamp(44px, 8.33vw, 120px);
+    --fs-h2:      clamp(34px, 4.86vw, 70px);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--iron); color:var(--ivory); font-family:var(--sans); -webkit-font-smoothing:antialiased; overflow-x:hidden; cursor:none; }
+  #cursor{ position:fixed; inset:0; z-index:70; pointer-events:none; filter:url(#goo); }
+  .goo-defs{ position:absolute; width:0; height:0; }
+
+  /* shared type primitives (exact Figma) */
+  .eyebrow{ font-family:var(--sans); font-weight:700; font-size:10px; line-height:10px; letter-spacing:1.6px; text-transform:uppercase; }
+  .h2{ font-family:var(--serif); font-weight:400; font-size:var(--fs-h2); line-height:1; letter-spacing:0; }
+  .body{ font-family:var(--sans); font-weight:400; font-size:14px; line-height:20px; }
+
+  /* noise overlay: above backgrounds/media, below text & vectors; stretched to browser size */
+  .noise{ position:absolute; inset:0; pointer-events:none;
+    background:url('assets/images/noise.png'); background-size:100vw 100vh; background-repeat:repeat;
+    mix-blend-mode:overlay; opacity:.55; }
+
+  /* ---------- HERO ---------- */
+  .hero-scroll{ position:relative; height:560vh; z-index:1; }
+  .hero-sticky{ position:sticky; top:0; height:100vh; overflow:hidden; }
+  #hero-video, #dither, .backdrop{ position:absolute; inset:0; width:100%; height:100%; }
+  .backdrop{ background:var(--iron); }
+  #hero-video{ object-fit:cover; z-index:1; }
+  .hero-vignette{ position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:url('assets/images/vignette.png'); background-size:100% 100%; background-repeat:no-repeat; }
+  .dither-layer{ position:absolute; inset:0; z-index:3; background:var(--ivory); }
+  #dither{ object-fit:cover; image-rendering:pixelated; }
+  .hero-sticky > .noise{ z-index:4; }
+  .hero-ui{ position:absolute; inset:0; z-index:6; pointer-events:none; }
+
+  .chrome{ position:fixed; inset:0; z-index:55; pointer-events:none; }
+  .chrome a, .chrome button{ pointer-events:auto; }
+
+  .nav{ position:absolute; top:30px; left:50%; transform:translateX(-50%); width:567px; max-width:88vw; opacity:0; }
+  .nav img{ width:100%; height:auto; display:block; }
+  .nav .nav-ivory{ position:absolute; inset:0; transition:opacity .35s linear; }
+
+  .logo-mover{ position:absolute; left:0; top:0; width:600px; transform-origin:0 0; will-change:transform; }
+  .logo-inner{ position:relative; width:100%; animation:logoIn 1s cubic-bezier(.22,1,.36,1) .12s both; }
+  .logo-inner img{ width:100%; height:auto; display:block; }
+  .logo-inner .lg-wi, .logo-inner .lg-wd{ position:absolute; inset:0; opacity:0; }
+  @keyframes logoIn{ from{ opacity:0; transform:translateY(34px); } to{ opacity:1; transform:translateY(0); } }
+
+  .headline{ position:absolute; top:50%; left:0; right:0; transform:translateY(-50%);
+    text-align:center; padding:0 4vw; opacity:0; }
+  .headline .hl{ display:block; font-family:var(--serif); font-weight:400;
+    font-size:var(--fs-display); line-height:.857; letter-spacing:0; }
+  .headline .hsub{ display:block; margin-top:70px; font-family:var(--sans); font-weight:700;
+    font-size:14px; line-height:20px; letter-spacing:0; text-transform:none; }
+
+  /* heat ticker — live temperature, line fills top→bottom with the alternate colour */
+  .heat{ position:absolute; bottom:28px; left:30px; display:flex; align-items:flex-end; gap:9px; opacity:0; }
+  .hline{ position:relative; width:2px; height:44px; }
+  .hline::before{ content:''; position:absolute; inset:0; background:currentColor; opacity:.28; }
+  .hline i{ position:absolute; top:0; left:0; right:0; height:0%; display:block; }
+  .hmeta b{ display:block; font-size:12px; line-height:1.25; font-weight:700; letter-spacing:.04em; }
+  .hmeta span{ display:block; font-size:8px; line-height:1.4; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; opacity:.85; }
+  .strap{ position:absolute; bottom:30px; right:30px; text-align:right; font-size:11px; letter-spacing:.16em; line-height:1.6; text-transform:uppercase; opacity:0; }
+
+  /* ---------- CONTENT ---------- */
+  .content{ position:relative; z-index:2; margin-top:-60vh; }
+  .forge{ position:relative; color:var(--iron);
+    background:linear-gradient(180deg,
+      #faf7e6 0%, #faf7e6 6%, #f4d29a 14%, #f0b976 20%,
+      #e07d43 24%, #cf512b 30%, #c5543a 48%, #bd6a5a 56%,
+      #c69a86 66%, #cbbfb0 74%, #c3c4c9 80%, #a2a8c6 87%,
+      #7c84b6 92%, #5b63a0 96%, #3a4274 100%); }
+  .forge::before{ content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:url('assets/images/noise.png'); background-size:100vw 100vh; background-repeat:repeat;
+    mix-blend-mode:overlay; opacity:.5; }
+  .forge > *{ position:relative; z-index:1; }
+  .wrap{ max-width:1280px; margin:0 auto; padding:0 80px; }
+  @media(max-width:900px){ .wrap{ padding:0 24px; } }
+  .reveal{ opacity:0; transform:translateY(26px); transition:opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
+  .reveal.in{ opacity:1; transform:none; }
+
+  /* STATEMENT — pinned word-by-word clip-rise (scroll-scrubbed) */
+  .stmt-run{ position:relative; height:300vh; }
+  .stmt-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; padding:0 6vw; text-align:center; }
+  .stmt-h{ font-family:var(--serif); font-weight:400; font-size:var(--fs-display); letter-spacing:0; color:var(--iron); }
+  .stmt-h .line{ display:block; line-height:1; }
+  .stmt-h .line + .line{ margin-top:-.26em; }
+  .stmt-h .w{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.14em; line-height:1; }
+  .stmt-h .wi{ display:inline-block; will-change:transform; transform:translateY(115%); }
+
+  /* LOGOS — scroll-scrubbed horizontal travel */
+  .ticker-wrap{ padding:4vh 0 22vh; }
+  .ticker-lead{ text-align:center; color:var(--iron); opacity:.9; margin-bottom:42px; }
+  .marquee{ overflow:hidden; width:100%; }
+  .mtrack{ display:flex; align-items:center; gap:64px; width:max-content; will-change:transform; padding:0 40px; }
+  .mlogo{ display:flex; align-items:center; height:30px; }
+  .mlogo img{ height:24px; width:auto; display:block; }
+  .mlogo.txt{ font-family:var(--serif); font-size:26px; line-height:1; color:var(--iron); opacity:.9; white-space:nowrap; }
+
+  /* HOW WE WORK — sticky card, scroll-scrubbed steps */
+  .how-head{ padding:6vh 0 8vh; text-align:center; }
+  .how-head h2{ color:var(--iron); }
+  .how-run{ position:relative; height:320vh; }
+  .how-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; }
+  .how-card{ position:relative; width:min(1279px, calc(100vw - 160px)); aspect-ratio:1279/720; max-height:88vh;
+    border-radius:10px; overflow:hidden; background:#0c1622; }
+  @media(max-width:900px){ .how-card{ width:calc(100vw - 48px); } }
+  .how-card .bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .how-card .veil{ position:absolute; inset:0; background:linear-gradient(180deg,rgba(8,17,27,.30),rgba(8,17,27,.60)); }
+  .how-card .noise{ z-index:1; }
+  .how-card .hlabel{ position:absolute; top:30px; left:0; right:0; text-align:center; color:var(--ivory); opacity:.8; z-index:2; }
+  .how-step{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--ivory); z-index:2; }
+  .how-num{ display:flex; align-items:center; justify-content:center; gap:20px; font-family:var(--serif); font-size:clamp(42px,6.2vw,90px); line-height:1; opacity:.9; }
+  .how-num .num{ min-width:.6em; text-align:center; }
+  .how-num .hbrk{ height:1.02em; width:auto; display:flex; align-items:center; opacity:.9; }
+  .how-num .hbrk img{ height:100%; width:auto; display:block; }
+  .how-step .word{ font-family:var(--serif); font-size:var(--fs-display); line-height:.857; }
+  .how-body{ position:absolute; left:0; right:0; bottom:44px; max-width:40ch; margin:0 auto;
+    font-size:14px; line-height:20px; color:var(--ivory); opacity:.92; padding:0 24px; z-index:2; }
+
+  /* GALVANISE — sticky stage, scroll-scrubbed list */
+  .galv-head{ padding:10vh 0 0; text-align:center; }
+  .galv-head h2{ color:var(--iron); }
+  .galv-run{ position:relative; height:360vh; }
+  .galv-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; }
+  .galv-inner{ position:relative; width:min(1280px, calc(100vw - 60px)); display:flex; align-items:center; justify-content:center; }
+  .galv-tag{ position:absolute; left:0; top:50%; transform:translateY(-50%);
+    display:flex; align-items:center; gap:16px; font-family:var(--sans); font-weight:700; font-size:clamp(20px,2.5vw,36px); line-height:1; color:var(--iron); white-space:nowrap; z-index:2; }
+  .galv-tag .gplus{ display:inline-flex; width:17px; height:17px; }
+  .galv-tag .gplus img{ width:17px; height:17px; display:block; }
+  .galv-frame{ position:relative; display:flex; align-items:center; gap:26px;
+    transform:translateX(clamp(0px, 17vw, 245px)); } /* Figma: bracket frame sits right of centre, tag on the left */
+  @media(max-width:900px){
+    .galv-inner{ flex-direction:column; gap:30px; }
+    .galv-frame{ transform:none; gap:14px; max-width:calc(100vw - 32px); }
+    .galv-frame .brk{ height:60px; }
+  }
+  .galv-frame .brk{ height:clamp(80px,9.2vw,132px); width:auto; flex:none; }
+  .galv-frame .brk img{ height:100%; width:auto; display:block; }
+  .galv-window{ position:relative; overflow:visible; }
+  .galv-list{ list-style:none; text-align:center; will-change:transform; }
+  .galv-list li{ font-family:var(--serif); font-size:var(--fs-list); line-height:1.1; white-space:nowrap;
+    color:var(--ivory); }
+  @media(max-width:900px){ .galv-tag{ position:static; transform:none; } }
+  .galv-note{ max-width:46ch; margin:0 0 0 auto; padding:10vh 6vw 20vh 24px; font-size:20px; line-height:24px; color:var(--iron); }
+  .galv-note b{ display:block; font-weight:400; margin-bottom:20px; }
+
+  /* MEET THE KNOWLEDGE */
+  .know{ padding:8vh 0 20vh; }
+  .know-head{ text-align:center; margin-bottom:8vh; }
+  .know-head h2{ color:var(--iron); }
+  .know-head .sub{ margin:16px auto 0; font-size:14px; line-height:20px; color:var(--iron); max-width:46ch; }
+  .know-grid{ display:grid; grid-template-columns:524fr 740fr; gap:96px; align-items:start; }
+  @media(max-width:900px){ .know-grid{ grid-template-columns:1fr; gap:40px; } }
+  .know-col .cap{ border-bottom:1px solid rgba(8,17,27,.5); padding-bottom:10px; margin-bottom:26px; }
+  .know-col .cap span{ color:var(--iron); opacity:.65; }
+  .krow{ border-top:1px solid rgba(8,17,27,.5); padding:14px 2px; }
+  .know-left .krow:first-of-type{ border-top:0; padding-top:0; }
+  .krow-head, .krow.simple{ display:flex; align-items:center; justify-content:space-between;
+    font-family:var(--sans); font-weight:700; font-size:20px; line-height:24px; color:var(--iron); }
+  .krow .arw{ opacity:.65; display:flex; align-items:center; }
+  .krow .arw img{ width:13px; height:13px; display:block; }
+  .krow-body{ margin-top:14px; font-size:14px; line-height:20px; color:var(--iron); max-width:44ch; }
+  .know-media{ position:relative; border-radius:8px; overflow:hidden; background:#0c1622; aspect-ratio:740/416; }
+  .know-media img, .know-media video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .know-media .noise{ z-index:1; }
+  .alfred{ position:absolute; left:24px; right:24px; bottom:24px; height:56px; border-radius:28px; z-index:2;
+    background:rgba(250,247,230,.14); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border:1px solid rgba(250,247,230,.26); display:flex; align-items:center; padding:0 8px 0 22px; color:var(--ivory); }
+  .alfred .name{ font-family:var(--serif); font-size:22px; line-height:1; }
+  .alfred .segs{ flex:1; display:flex; align-items:center; justify-content:center; gap:0; margin:0 14px; overflow:hidden; }
+  .alfred .seg{ font-size:11px; line-height:1.2; white-space:nowrap; opacity:.92; }
+  .alfred .seg i{ font-style:normal; opacity:.62; }
+  .alfred .div{ width:1px; height:30px; background:rgba(250,247,230,.34); margin:0 18px; flex:none; }
+  .alfred .logbtn{ margin-left:auto; height:40px; padding:0 22px; border-radius:20px; background:var(--ivory); color:var(--iron);
+    font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:.02em; display:flex; align-items:center; border:0; white-space:nowrap; flex:none; }
+  @media(max-width:520px){ .alfred .seg i{ display:none; } .alfred .div{ margin:0 10px; } }
+
+  /* SECURITY */
+  .sec{ padding:8vh 0 20vh; }
+  .sec h2{ text-align:center; margin-bottom:9vh; color:var(--iron); }
+  .sec-grid{ display:grid; grid-template-columns:632fr 632fr; column-gap:16px; }
+  @media(max-width:900px){ .sec-grid{ grid-template-columns:1fr; } }
+  .sitem{ display:grid; grid-template-columns:108px 1fr; align-items:start;
+    border-top:1px solid rgba(8,17,27,.5); padding:11px 0; min-height:75px; }
+  .sitem .idx{ padding-top:4px; color:var(--iron); opacity:.85; }
+  .sitem .txt{ font-family:var(--sans); font-size:20px; font-weight:700; line-height:24px; color:var(--iron); }
+
+  /* WORK WITH US */
+  .cta{ padding:6vh 0 18vh; text-align:center; }
+  .cta-btn{ display:inline-flex; align-items:center; justify-content:center;
+    background:var(--rust); color:var(--ivory); font-family:var(--serif); font-weight:400;
+    font-size:var(--fs-h2); line-height:1; padding:40px 100px; border-radius:147px;
+    text-decoration:none; transition:transform .3s cubic-bezier(.22,1,.36,1), background .3s; }
+  .cta-btn:hover{ transform:translateY(-3px); background:#d95c34; }
+  .cta-sub{ margin-top:24px; font-size:14px; line-height:20px; color:var(--ivory); opacity:.9; }
+
+  /* FOOTER */
+  .foot{ position:relative; background:var(--iron); color:var(--ivory); padding:14vh 0 8vh; }
+  .foot::before{ content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:url('assets/images/noise.png'); background-size:100vw 100vh; background-repeat:repeat;
+    mix-blend-mode:overlay; opacity:.4; }
+  .foot .inner{ position:relative; z-index:1; max-width:1004px; margin:0 auto; padding:0 40px; text-align:center; }
+  .foot .flogo{ height:30px; width:auto; margin:0 auto 40px; display:block; opacity:.96; }
+  .foot .ftag{ position:relative; display:inline-block; font-family:var(--serif); font-weight:400;
+    font-size:var(--fs-h2); line-height:1; letter-spacing:0; }
+  .foot .brk{ position:absolute; top:50%; transform:translateY(-50%); height:170px; width:auto; opacity:.92; }
+  .foot .brk.l{ left:-110px; } .foot .brk.r{ right:-110px; }
+  .foot .brk img{ height:100%; width:auto; display:block; }
+  @media(max-width:820px){ .foot .brk{ display:none; } }
+  .foot .links{ margin-top:48px; display:flex; flex-direction:column; gap:10px; align-items:center; }
+  .foot .links a{ color:var(--ivory); text-decoration:none; font-weight:700; font-size:10px; line-height:10px; letter-spacing:1.6px; text-transform:uppercase; opacity:.7; }
+  .foot .links a:hover{ opacity:1; }
+</style>
+</head>
+<body>
+
+  <svg class="goo-defs"><defs>
+    <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b"/>
+      <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"/></filter>
+  </defs></svg>
+
+  <canvas id="cursor"></canvas>
+
+  <img id="src-last" src="assets/frame_last.jpg" hidden alt="">
+
+  <section class="hero-scroll">
+    <div class="hero-sticky" id="sticky">
+      <div class="backdrop"></div>
+      <video id="hero-video" muted playsinline preload="auto" poster="assets/frame_first.jpg">
+        <source src="assets/river_scrub.mp4" type="video/mp4">
+      </video>
+      <div class="hero-vignette"></div>
+      <div class="dither-layer" id="dlayer"><canvas id="dither" width="160" height="90"></canvas></div>
+      <div class="noise"></div>
+      <div class="hero-ui">
+        <div class="headline" id="headline"><span class="hl">Meet your new<br>AI Department.</span><span class="hsub">Built for the everyday economy.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="chrome">
+    <div class="nav" id="nav"><img class="nav-dark" src="assets/Nav_Bar-dark.svg" alt="Ironbridge navigation"><img class="nav-ivory" src="assets/Nav_Bar.svg" alt=""></div>
+    <div class="logo-mover" id="logoMover"><div class="logo-inner">
+      <img class="lg lg-front" id="lgFront" src="assets/svg/logo_light.svg" alt="Ironbridge">
+      <img class="lg lg-wi" id="lgWI" src="assets/Logo.svg" alt="">
+      <img class="lg lg-wd" id="lgWD" src="assets/Logo-dark.svg" alt="">
+    </div></div>
+    <div class="heat" id="heat">
+      <span class="hline"><i id="heatFill"></i></span>
+      <span class="hmeta"><b id="heatTemp">1300&deg;C</b><span id="heatLabel">White heat</span></span>
+    </div>
+    <div class="strap" id="strap">The AI department for<br>the everyday economy.</div>
+  </div>
+
+  <main class="content">
+    <div class="forge">
+
+      <!-- STATEMENT — pinned clip-rise reveal -->
+      <div class="stmt-run" id="stmtRun">
+        <div class="stmt-stick">
+          <h2 class="stmt-h" id="stmtH">
+            <span class="line" data-line="Frontier AI is moving"></span>
+            <span class="line" data-line="faster than ever."></span>
+          </h2>
+        </div>
+      </div>
+
+      <!-- OPERATOR LOGOS — scroll-scrubbed -->
+      <div class="ticker-wrap" id="tickerWrap">
+        <div class="ticker-lead eyebrow reveal">Built &amp; supported by leading AI operators:</div>
+        <div class="marquee" id="marquee"><div class="mtrack" id="mtrack"></div></div>
+      </div>
+
+      <!-- HOW WE WORK — sticky video, scrubbed steps -->
+      <div class="how-head wrap"><h2 class="h2 reveal">How we work.</h2></div>
+      <div class="how-run" id="howRun">
+        <div class="how-stick">
+          <div class="how-card">
+            <video class="bg" autoplay loop muted playsinline poster="assets/frame_first.jpg">
+              <source src="assets/videos/Seedance%202.0_0001.mp4" type="video/mp4">
+            </video>
+            <div class="veil"></div>
+            <div class="noise"></div>
+            <div class="hlabel eyebrow">how we work</div>
+            <div class="how-step" id="howStep">
+              <div class="how-num">
+                <span class="hbrk"><img src="assets/svg/bracket_light_left.svg" alt=""></span>
+                <span class="num" id="howNum">1</span>
+                <span class="hbrk"><img src="assets/svg/bracket_light_right.svg" alt=""></span>
+              </div>
+              <span class="word" id="howWord">Discover.</span>
+            </div>
+            <p class="how-body" id="howBody">We map where AI helps in your firm, and where to start. Discovery and scoping. AI workshops. First pilots. A strategy worth committing to.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- GALVANISE — sticky stage, scrubbed capability list -->
+      <div class="galv-head wrap"><h2 class="h2 reveal">Galvanise change across your firm.</h2></div>
+      <div class="galv-run" id="galvRun">
+        <div class="galv-stick">
+          <div class="galv-inner">
+            <div class="galv-tag">Your AI Department
+              <span class="gplus"><img src="assets/svg/plus_dark.svg" alt="+"></span>
+            </div>
+            <div class="galv-frame">
+              <span class="brk l"><img src="assets/svg/bracket_dark_left.svg" alt=""></span>
+              <div class="galv-window" id="galvWindow">
+                <ul class="galv-list" id="galvList">
+                  <li>Finance</li>
+                  <li>Operations</li>
+                  <li>Customer service</li>
+                  <li>New business</li>
+                </ul>
+              </div>
+              <span class="brk r"><img src="assets/svg/bracket_dark_right.svg" alt=""></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wrap"><p class="galv-note reveal"><b>To unlock more of what makes us human.</b>Every hour your AI Department gives back goes to the work only your people can do: the judgement, the relationships, the craft.</p></div>
+
+      <!-- MEET THE KNOWLEDGE -->
+      <section class="know wrap">
+        <div class="know-head">
+          <h2 class="h2 reveal">Meet the Knowledge.</h2>
+          <p class="sub reveal">A living map of what your firm knows, brought together in one secure place, kept yours, and put to work.</p>
+        </div>
+        <div class="know-grid">
+          <div class="know-col know-left reveal">
+            <div class="cap"><span class="eyebrow">stages</span></div>
+            <div class="krow">
+              <div class="krow-head"><span>Your firm already knows.</span><span class="arw"><img src="assets/svg/arrow_dark.svg" alt=""></span></div>
+              <p class="krow-body">Your firm already knows how to win this moment. The problem is where that knowledge lives: scattered across systems, documents and inboxes, and in your best people&#39;s heads.</p>
+            </div>
+            <div class="krow simple"><span>A single interface.</span><span class="arw"><img src="assets/svg/arrow_dark.svg" alt=""></span></div>
+            <div class="krow simple"><span>Model agnostic.</span><span class="arw"><img src="assets/svg/arrow_dark.svg" alt=""></span></div>
+            <div class="krow simple"><span>The five verbs.</span><span class="arw"><img src="assets/svg/arrow_dark.svg" alt=""></span></div>
+          </div>
+          <div class="know-col know-right reveal">
+            <div class="cap"><span class="eyebrow">knowledge</span></div>
+            <div class="know-media">
+              <video autoplay loop muted playsinline poster="assets/frame_last.jpg">
+                <source src="assets/videos/Seedance%202.0_0001.mp4" type="video/mp4">
+              </video>
+              <div class="noise"></div>
+              <div class="alfred">
+                <span class="name">Alfred</span>
+                <span class="segs">
+                  <span class="seg">17h 45m <i>this week</i></span>
+                  <span class="div"></span>
+                  <span class="seg">78m <i>today</i></span>
+                  <span class="div"></span>
+                  <span class="seg">12 <i>to log</i></span>
+                </span>
+                <button class="logbtn">Log Time</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECURITY AND CONTROL -->
+      <section class="sec wrap">
+        <h2 class="h2 reveal">Security and control.</h2>
+        <div class="sec-grid">
+          <div class="sitem reveal"><span class="idx eyebrow">/01</span><span class="txt">Flexible deployment options.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/08</span><span class="txt">Mirrored source-tool permissions.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/02</span><span class="txt">Fully managed, sealed on shared infrastructure, or inside your own Microsoft cloud.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/09</span><span class="txt">Identity from your Entra, Google, and role-based access.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/03</span><span class="txt">Data governance.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/10</span><span class="txt">Full audit logs.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/04</span><span class="txt">Encrypted at rest and in transit.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/11</span><span class="txt">Every interaction scoped, logged and traceable.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/05</span><span class="txt">Never used to train public models.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/12</span><span class="txt">Compliance.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/06</span><span class="txt">Access controls.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/13</span><span class="txt">Command centre.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/07</span><span class="txt">Least-privilege by design.</span></div>
+          <div class="sitem reveal"><span class="idx eyebrow">/14</span><span class="txt">Usage, spend and impact for every deployment, in one place.</span></div>
+        </div>
+      </section>
+
+      <!-- WORK WITH US -->
+      <section class="cta wrap">
+        <a class="cta-btn reveal" href="mailto:hello@ironbridge.tech">Work with us.</a>
+        <p class="cta-sub reveal">Tell us about your firm and what you are trying to solve.</p>
+      </section>
+
+    </div><!-- /forge -->
+
+    <!-- FOOTER -->
+    <footer class="foot">
+      <div class="inner">
+        <img class="flogo" src="assets/svg/wordmark_light.svg" alt="Ironbridge">
+        <div class="ftag">
+          <span class="brk l"><img src="assets/svg/bracket_light_left.svg" alt=""></span>
+          The AI department<br>for the everyday economy.
+          <span class="brk r"><img src="assets/svg/bracket_light_right.svg" alt=""></span>
+        </div>
+        <div class="links">
+          <a href="#">careers</a>
+          <a href="#">privacy policy</a>
+          <a href="#">registration information</a>
+          <a href="#">terms of use</a>
+          <a href="mailto:hello@ironbridge.tech">hello@ironbridge.tech</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+<script>
+(function(){
+  "use strict";
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function inv(p,a,b){ return clamp((p-a)/(b-a),0,1); }
+
+  /* ---------- bottom-up dither (end of hero only) ---------- */
+  var CW=300, CH=169, BIAS=1.6;
+  var dither=document.getElementById('dither'), dctx=dither.getContext('2d');
+  var off=document.createElement('canvas'), octx=off.getContext('2d');
+  var RND=null;
+  function setGrain(cw){ CW=cw; CH=Math.round(cw*9/16); dither.width=CW; dither.height=CH; off.width=CW; off.height=CH;
+    RND=new Float32Array(CW*CH); for(var k=0;k<RND.length;k++) RND[k]=Math.random(); }
+  setGrain(300);
+  var lastImg=document.getElementById('src-last');
+
+  // dots dissolve in random order but weighted from the bottom rows upward
+  function renderDither(img, reveal){
+    if(!img.complete || !img.naturalWidth){ dctx.clearRect(0,0,CW,CH); return; }
+    octx.drawImage(img,0,0,CW,CH);
+    var src=octx.getImageData(0,0,CW,CH).data, out=dctx.createImageData(CW,CH), o=out.data;
+    var base=reveal*(1+BIAS);
+    for(var y=0;y<CH;y++){
+      var thresh = base - BIAS*((y+0.5)/CH);
+      for(var x=0;x<CW;x++){
+        var px=y*CW+x, i=px*4;
+        if(RND[px]<thresh){ o[i]=src[i]; o[i+1]=src[i+1]; o[i+2]=src[i+2]; o[i+3]=255; }
+        else { o[i+3]=0; }
+      }
+    }
+    dctx.putImageData(out,0,0);
+  }
+
+  /* ---------- element handles ---------- */
+  var heroScroll=document.querySelector('.hero-scroll');
+  var video=document.getElementById('hero-video'), dlayer=document.getElementById('dlayer');
+  var nav=document.getElementById('nav'), navIvory=nav.querySelector('.nav-ivory'), mover=document.getElementById('logoMover');
+  var lgFront=document.getElementById('lgFront'), lgWI=document.getElementById('lgWI'), lgWD=document.getElementById('lgWD');
+  var headline=document.getElementById('headline');
+  var heat=document.getElementById('heat'), heatFill=document.getElementById('heatFill');
+  var heatTemp=document.getElementById('heatTemp'), heatLabel=document.getElementById('heatLabel');
+  var strap=document.getElementById('strap');
+  var forge=document.querySelector('.forge');
+
+  /* hero timing: video visible from the start, scrubs 0..S1, dithers out bottom-up over S1..1 */
+  var S1=0.80, DO=0.88;
+  var duration=10, targetTime=0;
+  video.addEventListener('loadedmetadata', function(){ duration=video.duration||10; try{ video.currentTime=0; }catch(e){} });
+  function heroProgress(){ var h=heroScroll.offsetHeight-window.innerHeight; return clamp(window.scrollY/h,0,1); }
+
+  function logoTransform(t){
+    var W=innerWidth,H=innerHeight,baseW=600,aspect=99/510;
+    var frontSc=Math.min(0.40*W,560)/baseW, dockSc=150/baseW;
+    var sc=lerp(frontSc,dockSc,t);
+    var wS=baseW*sc, hS=baseW*aspect*sc, hEnd=150*aspect;
+    var cyStart=H/2, cyEnd=H-26-hEnd/2, cy=lerp(cyStart,cyEnd,t);
+    return 'translate('+(W/2-wS/2)+'px,'+(cy-hS/2)+'px) scale('+sc+')';
+  }
+
+  /* ---------- chrome colour scheme (uiLit: 1 = ivory chrome, 0 = iron chrome) ---------- */
+  var uiLit=1; // page opens on dark footage -> ivory chrome
+  var IRON=[8,17,27], IVORY=[250,247,230];
+  // forge gradient stops mirrored from CSS; chrome picks the palette by sampled luminance
+  var STOPS=[[0,250,247,230],[0.06,250,247,230],[0.14,244,210,154],[0.20,240,185,118],
+    [0.24,224,125,67],[0.30,207,81,43],[0.48,197,84,58],[0.56,189,106,90],
+    [0.66,198,154,134],[0.74,203,191,176],[0.80,195,196,201],[0.87,162,168,198],
+    [0.92,124,132,182],[0.96,91,99,160],[1,58,66,116]];
+  function forgeLum(f){
+    if(f>=1) return 0.06;                                      // footer iron
+    if(f<=0) return 0.96;
+    var i=1; while(i<STOPS.length && STOPS[i][0]<f) i++;
+    var a=STOPS[i-1], b=STOPS[Math.min(i,STOPS.length-1)];
+    var t=(f-a[0])/Math.max(1e-6,(b[0]-a[0]));
+    var r=lerp(a[1],b[1],t), g=lerp(a[2],b[2],t), bl=lerp(a[3],b[3],t);
+    return (0.299*r+0.587*g+0.114*bl)/255;
+  }
+  function chromeTarget(p){
+    if(p<0.999) return 1 - inv(p,S1,0.97);                    // hero: ivory over footage, iron once the bone dither lands
+    var f=(window.scrollY + innerHeight*0.5 - elTop(forge))/forge.offsetHeight;
+    return forgeLum(f) > 0.44 ? 0 : 1;                         // light bg -> iron chrome, dark bg -> ivory chrome
+  }
+
+  /* ---------- statement clip-rise (motion values from the reference, verbatim) ---------- */
+  var stmtRun=document.getElementById('stmtRun'), stmtH=document.getElementById('stmtH');
+  var stmtInners=[];
+  (function(){
+    var lines=stmtH.querySelectorAll('.line');
+    lines.forEach(function(line){
+      var words=line.getAttribute('data-line').trim().split(/\s+/);
+      words.forEach(function(w,i){
+        var mask=document.createElement('span'); mask.className='w';
+        var innr=document.createElement('span'); innr.className='wi'; innr.textContent=w;
+        mask.appendChild(innr); line.appendChild(mask);
+        if(i<words.length-1) line.appendChild(document.createTextNode(' '));
+        stmtInners.push(innr);
+      });
+    });
+  })();
+  var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var STAGGER=0.35, DUR=1, HOLD=1.5, YFROM=115, SCRUB_TAU=0.36; // scrub:0.8 ≈ catch-up in ~0.8s
+  var stmtT = STAGGER*(stmtInners.length-1) + DUR + HOLD;
+  var stmtP=0;
+  function pow3out(x){ return 1-Math.pow(1-x,3); }
+  function stmtTarget(){
+    var top=elTop(stmtRun), h=stmtRun.offsetHeight - innerHeight;
+    return clamp((window.scrollY - top)/h, 0, 1);
+  }
+  if(REDUCE){ stmtInners.forEach(function(s){ s.style.transform='translateY(0%)'; }); }
+
+  /* ---------- logos: scroll-scrubbed travel, first -> last ---------- */
+  var LOGOS=[
+    ['op-palantir.svg','Palantir'],['op-mckinsey.svg','McKinsey & Company'],['op-jpmorgan.svg','J.P. Morgan'],
+    ['op-cabinet-office.svg','Cabinet Office'],['op-paypal.svg','PayPal'],['op-bcg.svg','BCG'],['op-meta.svg','Meta'],
+    ['op-bloomberg.svg','Bloomberg'],['op-openai.svg','OpenAI'],['op-deepmind.svg','DeepMind'],['op-google.svg','Google'],
+    ['op-microsoft.svg','Microsoft'],['op-lovable.svg','Lovable'],['op-huggingface.svg','Hugging Face']
+  ];
+  var marquee=document.getElementById('marquee'), track=document.getElementById('mtrack');
+  LOGOS.forEach(function(l){
+    var span=document.createElement('span'); span.className='mlogo';
+    var img=document.createElement('img'); img.src='assets/svg/logos/'+l[0]; img.alt=l[1];
+    img.addEventListener('error', function(){ span.className='mlogo txt'; span.textContent=l[1]; });
+    span.appendChild(img); track.appendChild(span);
+  });
+  var mx=0;
+
+  /* ---------- how we work: scrubbed steps ---------- */
+  var howRun=document.getElementById('howRun');
+  var howStep=document.getElementById('howStep'), howBody=document.getElementById('howBody');
+  var howNum=document.getElementById('howNum'), howWord=document.getElementById('howWord');
+  var steps=[
+    ['1','Discover.','We map where AI helps in your firm, and where to start. Discovery and scoping. AI workshops. First pilots. A strategy worth committing to.'],
+    ['2','Deploy.','We build into your systems and your permissions, on site with your team. Live where the work happens, wired into the tools you already run.'],
+    ['3','Deepen.','We improve what is live, enable your team, and build the next one faster than the last. Momentum that compounds across your firm.']
+  ];
+  var hi=0;
+  function elTop(el){ var y=0; while(el){ y+=el.offsetTop; el=el.offsetParent; } return y; }
+
+  /* ---------- galvanise: scrubbed capability list ---------- */
+  var galvRun=document.getElementById('galvRun'), galvWindow=document.getElementById('galvWindow');
+  var galvList=document.getElementById('galvList');
+  var galvItems=Array.prototype.slice.call(galvList.children);
+  var rowH=0;
+  function measureGalv(){
+    rowH=galvItems.length>1 ? galvItems[1].offsetTop-galvItems[0].offsetTop : galvItems[0].offsetHeight;
+    galvWindow.style.height=galvItems[0].offsetHeight+'px';
+  }
+
+  /* ---------- heat labels ---------- */
+  function heatLabelFor(t){
+    if(t>1100) return 'White heat';
+    if(t>800)  return 'Welding heat';
+    if(t>400)  return 'Critical heat';
+    if(t>280)  return 'Fading heat';
+    if(t>20)   return 'Temper heat';
+    return 'Cold heat';
+  }
+
+  /* ---------- master frame loop ---------- */
+  var seeking=false, lastTs=performance.now();
+  function frame(ts){
+    var dt=Math.min(0.1,(ts-lastTs)/1000); lastTs=ts;
+    var vh=innerHeight, sy=window.scrollY;
+    var p=heroProgress();
+
+    /* hero: video from the start; bottom-up dither-out at the end */
+    var dop = p<S1 ? 0 : p<DO ? inv(p,S1,DO) : 1;
+    dlayer.style.opacity=dop;
+    if(p>=S1) renderDither(lastImg, p<DO ? 1 : 1-inv(p,DO,1.0));
+    targetTime = inv(p,0.02,S1)*duration;
+    if(video.readyState>=1 && !seeking && isFinite(targetTime) && Math.abs(video.currentTime-targetTime)>0.01){
+      seeking=true; try{ video.currentTime=targetTime; }catch(e){} }
+
+    mover.style.transform = logoTransform(inv(p,0.06,0.30));
+
+    /* chrome colours */
+    var target=chromeTarget(p);
+    uiLit += (target-uiLit)*Math.min(1,dt*7);
+    var d=inv(p,0.095,0.22);
+    lgFront.style.opacity = 1-d;
+    lgWI.style.opacity    = d*uiLit;
+    lgWD.style.opacity    = d*(1-uiLit);
+    navIvory.style.opacity= uiLit;
+    var uic='rgb('+Math.round(lerp(IRON[0],IVORY[0],uiLit))+','+Math.round(lerp(IRON[1],IVORY[1],uiLit))+','+Math.round(lerp(IRON[2],IVORY[2],uiLit))+')';
+    var alt='rgb('+Math.round(lerp(IVORY[0],IRON[0],uiLit))+','+Math.round(lerp(IVORY[1],IRON[1],uiLit))+','+Math.round(lerp(IVORY[2],IRON[2],uiLit))+')';
+    strap.style.color=uic; heat.style.color=uic; heatFill.style.background=alt;
+    nav.style.opacity=inv(p,0.22,0.34);
+    headline.style.opacity=inv(p,0.54,0.68);
+
+    /* heat ticker + strap appear only once the hero has dithered away */
+    var chromeVis = inv(p,0.90,0.99);
+    heat.style.opacity=chromeVis; strap.style.opacity=chromeVis;
+
+    /* live temperature: 1300°C at hero end -> 20°C at page bottom */
+    var heroEndScroll=heroScroll.offsetHeight-vh;
+    var maxScroll=document.documentElement.scrollHeight-vh;
+    var tp=clamp((sy-heroEndScroll)/(maxScroll-heroEndScroll),0,1);
+    var temp=Math.round(lerp(1300,20,tp)/5)*5;
+    heatTemp.innerHTML=temp+'&deg;C';
+    heatLabel.textContent=heatLabelFor(temp);
+    heatFill.style.height=(tp*100)+'%';
+
+    /* statement clip-rise (scrub-smoothed) */
+    if(!REDUCE){
+      stmtP += (stmtTarget()-stmtP)*(1-Math.exp(-dt/SCRUB_TAU));
+      var tl=stmtP*stmtT;
+      for(var i=0;i<stmtInners.length;i++){
+        var local=clamp((tl-STAGGER*i)/DUR,0,1);
+        stmtInners[i].style.transform='translateY('+(YFROM*(1-pow3out(local)))+'%)';
+      }
+    }
+
+    /* logos: first logo on entry, last logo on exit */
+    var mr=marquee.getBoundingClientRect();
+    var lt=clamp((vh-mr.top)/(vh+mr.height),0,1);
+    var span=Math.max(0,track.scrollWidth-marquee.clientWidth);
+    mx += (-lt*span-mx)*Math.min(1,dt*8);
+    track.style.transform='translateX('+mx+'px)';
+
+    /* how we work: scrub the three steps */
+    var ht=elTop(howRun), hp=clamp((sy-ht)/(howRun.offsetHeight-vh),0,1);
+    var seg=Math.min(2.999,hp*3), idx=Math.floor(seg), local2=seg-idx;
+    if(idx!==hi){ hi=idx; var s=steps[hi]; howNum.textContent=s[0]; howWord.textContent=s[1]; howBody.textContent=s[2]; }
+    var alpha = local2<0.12 ? local2/0.12 : (local2>0.9 && idx<2) ? Math.max(0,(1-local2)/0.1) : 1;
+    if(hp<=0||hp>=1) alpha=1;
+    howStep.style.opacity=alpha; howBody.style.opacity=alpha*0.92;
+
+    /* galvanise: scrub through the four capabilities */
+    var gt=elTop(galvRun), gp=clamp((sy-gt)/(galvRun.offsetHeight-vh),0,1);
+    var pos=gp*(galvItems.length-1);
+    if(!rowH) measureGalv();
+    galvList.style.transform='translateY('+(-pos*rowH)+'px)';
+    for(var gi=0; gi<galvItems.length; gi++){
+      var dd=Math.abs(gi-pos);
+      galvItems[gi].style.opacity = dd<0.5 ? 1 : Math.max(0.14, 0.62-0.3*dd);
+      galvItems[gi].style.color = dd<0.5 ? '#cf512b' : '#faf7e6';
+    }
+
+    requestAnimationFrame(frame);
+  }
+  video.addEventListener('seeked', function(){ seeking=false; });
+  video.addEventListener('error', function(){ seeking=false; });
+  addEventListener('resize', function(){ rowH=0; });
+  requestAnimationFrame(frame);
+
+  /* ---------- pixel-trail cursor ---------- */
+  var cv=document.getElementById('cursor'), cx=cv.getContext('2d');
+  var CELL=12, cols=0, rows=0, ages=null, MAXAGE_MS=350;
+  function buildGrid(){ cv.width=innerWidth; cv.height=innerHeight;
+    CELL=Math.max(3, Math.round(Math.min(cv.width,cv.height)*0.012));
+    cols=Math.ceil(cv.width/CELL); rows=Math.ceil(cv.height/CELL);
+    ages=new Float32Array(cols*rows); for(var i=0;i<ages.length;i++) ages[i]=1e9; }
+  buildGrid(); addEventListener('resize', buildGrid);
+  function activate(px,py){ var c=Math.floor(px/CELL), r=Math.floor(py/CELL); if(c>=0&&c<cols&&r>=0&&r<rows) ages[r*cols+c]=0; }
+  var lmx=-1, lmy=-1;
+  addEventListener('mousemove', function(e){
+    if(lmx<0){ activate(e.clientX,e.clientY); }
+    else { var d=Math.hypot(e.clientX-lmx,e.clientY-lmy), steps2=Math.max(1,Math.ceil(d/(CELL*0.5)));
+      for(var i=0;i<=steps2;i++){ var t=i/steps2; activate(lmx+(e.clientX-lmx)*t, lmy+(e.clientY-lmy)*t); } }
+    lmx=e.clientX; lmy=e.clientY;
+  });
+  var lastC=performance.now();
+  function cursorFrame(now){ var dt=now-lastC; lastC=now; cx.clearRect(0,0,cv.width,cv.height);
+    var r=Math.round(lerp(IRON[0],IVORY[0],uiLit)), g=Math.round(lerp(IRON[1],IVORY[1],uiLit)), b=Math.round(lerp(IRON[2],IVORY[2],uiLit)), pre='rgba('+r+','+g+','+b+',';
+    for(var idx2=0; idx2<ages.length; idx2++){ var a=ages[idx2]; if(a>=MAXAGE_MS) continue; ages[idx2]=a+dt;
+      cx.fillStyle=pre+(1-a/MAXAGE_MS)+')'; cx.fillRect((idx2%cols)*CELL, ((idx2/cols)|0)*CELL, CELL-1, CELL-1); }
+    requestAnimationFrame(cursorFrame); }
+  requestAnimationFrame(cursorFrame);
+
+  /* ---------- scroll reveals ---------- */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold:0.16, rootMargin:'0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+})();
+</script>
+</body>
+</html>
