@@ -182,9 +182,16 @@
     font-family:var(--serif); font-weight:400; font-size:var(--fs-h2); line-height:1; color:var(--ivory);
     opacity:0; pointer-events:none; }
 
-  /* MEET THE KNOWLEDGE */
-  .know{ padding:8vh 0 20vh; }
-  .know-head{ text-align:center; margin-bottom:8vh; }
+  /* MEET THE KNOWLEDGE — sticky screen, stages scrubbed by scroll (hover still works) */
+  .know-run{ position:relative; height:440vh; }
+  .know-stick{ position:sticky; top:0; height:100vh; display:flex; flex-direction:column; justify-content:center; }
+  .know{ padding:0; }
+  .know-head{ text-align:center; margin-bottom:6vh; }
+  @media(max-width:900px){
+    .know-run{ height:auto; }
+    .know-stick{ position:static; height:auto; }
+    .know{ padding:8vh 0 14vh; }
+  }
   .know-head h2{ color:var(--iron); }
   .know-head .sub{ margin:16px auto 0; font-size:14px; line-height:20px; color:var(--iron); max-width:46ch; }
   .know-grid{ display:grid; grid-template-columns:524fr 740fr; gap:16px; align-items:stretch; }
@@ -380,6 +387,8 @@
       </div>
 
       <!-- MEET THE KNOWLEDGE -->
+      <div class="know-run" id="knowRun">
+      <div class="know-stick">
       <section class="know wrap">
         <div class="know-head">
           <h2 class="h2 reveal">Meet the Knowledge.</h2>
@@ -417,6 +426,8 @@
           </div>
         </div>
       </section>
+      </div><!-- /know-stick -->
+      </div><!-- /know-run -->
 
       <!-- SECURITY AND CONTROL -->
       <section class="sec wrap">
@@ -514,7 +525,7 @@
     var targets={
       about: function(){ return heroScroll.offsetHeight - innerHeight; },
       department: function(){ return elTop(galvHead) - 40; },
-      knowledge: function(){ return elTop(document.querySelector('.know')) - 40; }
+      knowledge: function(){ return elTop(document.getElementById('knowRun')); }
     };
     Object.keys(navItems).forEach(function(k){
       navItems[k].addEventListener('click', function(){
@@ -663,15 +674,23 @@
   })();
 
   /* ---------- meet the knowledge: hover swaps the active stage ---------- */
+  // placeholder: the same body copy for every stage while the content is being written
+  var KBODY='Your firm already knows how to win this moment. The problem is where that knowledge lives: scattered across systems, documents and inboxes, and in your best people’s heads.';
   var KITEMS=[
-    ['Your firm already knows.','Your firm already knows how to win this moment. The problem is where that knowledge lives: scattered across systems, documents and inboxes, and in your best people’s heads.'],
-    ['A single interface.','One place to ask, act and automate: chat, search and workflows in a single surface your whole firm can use.'],
-    ['Model agnostic.','The best model for each job, swapped as the frontier moves. Your knowledge and workflows stay yours, whatever the engine.'],
-    ['The five verbs.','Ask, draft, decide, automate, learn. Every deployment maps to the verbs your teams already run all day.']
+    ['Your firm already knows.',KBODY],
+    ['A single interface.',KBODY],
+    ['Model agnostic.',KBODY],
+    ['The five verbs.',KBODY]
   ];
-  var kAct=0;
+  var kAct=0, kSwapping=false, kScrollIdx=0;
+  var knowRun=document.getElementById('knowRun');
   var knowActive=document.getElementById('knowActive'), knowRest=document.getElementById('knowRest');
   var kActTitle=document.getElementById('kActTitle'), kActBody=document.getElementById('kActBody');
+  function setKnowStage(i){
+    if(kAct===i || kSwapping) return;
+    kSwapping=true; kAct=i; knowActive.style.opacity=0;
+    setTimeout(function(){ renderKnow(); knowActive.style.opacity=1; kSwapping=false; }, 160);
+  }
   function renderKnow(){
     kActTitle.textContent=KITEMS[kAct][0]; kActBody.textContent=KITEMS[kAct][1];
     knowRest.innerHTML='';
@@ -682,11 +701,7 @@
       var a=document.createElement('span'); a.className='arw';
       var im=document.createElement('img'); im.src='assets/svg/arrow_dark.svg'; im.alt='';
       a.appendChild(im); d.appendChild(s); d.appendChild(a);
-      function activateK(){
-        if(kAct===i) return;
-        kAct=i; knowActive.style.opacity=0;
-        setTimeout(function(){ renderKnow(); knowActive.style.opacity=1; }, 160);
-      }
+      function activateK(){ setKnowStage(i); }
       d.addEventListener('mouseenter', activateK);
       d.addEventListener('click', activateK);
       knowRest.appendChild(d);
@@ -736,7 +751,7 @@
        galvanise -> Knowledge at the knowledge section, gone at the footer */
     var mid=sy+vh*0.5, navKey;
     if(mid < elTop(galvHead)) navKey='about';
-    else if(mid < elTop(knowSection)) navKey='department';
+    else if(mid < elTop(knowRun)) navKey='department';
     else navKey='knowledge';
     var act=navItems[navKey];
     if(act){
@@ -812,6 +827,11 @@
     }
     var gnote=galvList.querySelector('.galv-note');
     if(gnote) gnote.style.opacity=inv(pos, 2.3, 2.95);        // note rises in with New business only
+
+    /* meet the knowledge: scroll scrubs the four stages while the section holds */
+    var kp=clamp((sy-elTop(knowRun))/(knowRun.offsetHeight-vh),0,1);
+    var ki=Math.min(3, Math.floor(kp*4));
+    if(ki!==kScrollIdx){ kScrollIdx=ki; setKnowStage(ki); }
 
     /* the department: roll the names into the wall, accelerating as they multiply */
     var nrp=clamp((sy-elTop(namesRun))/(namesRun.offsetHeight-vh),0,1);
