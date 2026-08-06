@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ironbridge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  @font-face{ font-family:'Charger'; src:url('assets/ChargerV2-RegularCondensed.ttf') format('truetype'); font-weight:400; font-display:swap; }
+  :root{
+    --iron:#08111B; --rust:#cf512b; --amber:#f0b976; --ivory:#faf7e6; --line:#24344a; --muted:#9aa7b6; --indigo:#41488a;
+    --sans:'Geist', system-ui, -apple-system, sans-serif;
+    --serif:'Instrument Serif', Georgia, serif;
+    --charger:'Charger', 'Arial Narrow', sans-serif;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--iron); color:var(--ivory); font-family:var(--sans); -webkit-font-smoothing:antialiased; overflow-x:hidden; cursor:none; }
+  #cursor{ position:fixed; inset:0; z-index:70; pointer-events:none; filter:url(#goo); }
+  .goo-defs{ position:absolute; width:0; height:0; }
+
+  /* ---------- HERO ---------- */
+  .hero-scroll{ position:relative; height:560vh; z-index:1; }
+  .hero-sticky{ position:sticky; top:0; height:100vh; overflow:hidden; }
+  #hero-video, #dither, .backdrop{ position:absolute; inset:0; width:100%; height:100%; }
+  .backdrop{ background:var(--iron); }
+  #hero-video{ object-fit:cover; z-index:1; }
+  .dither-layer{ position:absolute; inset:0; z-index:2; background:var(--ivory); }
+  #dither{ object-fit:cover; image-rendering:pixelated; }
+
+  .hero-ui{ position:absolute; inset:0; z-index:5; pointer-events:none; }
+  .chrome{ position:fixed; inset:0; z-index:55; pointer-events:none; }
+  .chrome a, .chrome button{ pointer-events:auto; }
+
+  .nav{ position:absolute; top:30px; left:50%; transform:translateX(-50%); width:567px; max-width:88vw; opacity:0; }
+  .nav img{ width:100%; height:auto; display:block; }
+  .nav .nav-ivory{ position:absolute; inset:0; }
+
+  .logo-mover{ position:absolute; left:0; top:0; width:600px; transform-origin:0 0; will-change:transform; }
+  .logo-inner{ position:relative; width:100%; animation:logoIn 1s cubic-bezier(.22,1,.36,1) .12s both; }
+  .logo-inner img{ width:100%; height:auto; display:block; }
+  .logo-inner .lg-wi, .logo-inner .lg-wd{ position:absolute; inset:0; opacity:0; }
+  @keyframes logoIn{ from{ opacity:0; transform:translateY(34px); } to{ opacity:1; transform:translateY(0); } }
+
+  .headline{ position:absolute; top:50%; left:0; right:0; transform:translateY(-50%);
+    text-align:center; padding:0 4vw; opacity:0; }
+  .headline .hl{ display:block; font-family:var(--serif); font-weight:400;
+    font-size:clamp(40px,7.2vw,104px); line-height:.98; letter-spacing:.005em; }
+  .headline .hsub{ display:block; margin-top:22px; font-family:var(--sans);
+    font-size:clamp(10px,1.1vw,13px); letter-spacing:.28em; text-transform:uppercase; opacity:.82; }
+
+  .heat{ position:absolute; bottom:28px; left:30px; height:44px; }
+  .heat img{ position:absolute; bottom:0; left:0; height:44px; width:auto; }
+  .heat .heat-ivory{ opacity:0; }
+  .strap{ position:absolute; bottom:30px; right:30px; text-align:right; font-size:11px; letter-spacing:.16em; line-height:1.6; text-transform:uppercase; color:#08111B; }
+  .hint{ position:absolute; bottom:70px; left:50%; transform:translateX(-50%); font-size:11px; letter-spacing:.24em; text-transform:uppercase; opacity:.7; }
+
+  /* ---------- CONTENT (slides up over the hero) ---------- */
+  .content{ position:relative; z-index:2; margin-top:-60vh; }
+  /* the forge: one continuous heat-then-cool gradient behind every section */
+  .forge{ color:var(--iron);
+    background:linear-gradient(180deg,
+      #faf7e6 0%, #faf7e6 6%, #f4d29a 12%, #f0b976 17%,
+      #e07d43 24%, #cf512b 29%, #c5543a 37%, #bd6a5a 45%,
+      #c69a86 51%, #cbbfb0 56%, #c3c4c9 61%, #a2a8c6 68%,
+      #7c84b6 76%, #5b63a0 84%, #3a4274 92%, #1c2440 100%); }
+  .wrap{ max-width:1280px; margin:0 auto; padding:0 40px; }
+  @media(max-width:760px){ .wrap{ padding:0 24px; } }
+  .eyebrow{ font-size:11px; letter-spacing:.26em; text-transform:uppercase; font-weight:600; opacity:.65; }
+  .h2{ font-family:var(--serif); font-weight:400; letter-spacing:.005em;
+    font-size:clamp(34px,5.4vw,64px); line-height:1.02; }
+  .reveal{ opacity:0; transform:translateY(26px); transition:opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
+  .reveal.in{ opacity:1; transform:none; }
+
+  /* STATEMENT */
+  .statement{ padding:26vh 8vw 20vh; text-align:center; }
+  .statement h2{ font-family:var(--serif); font-weight:400; font-size:clamp(40px,6.4vw,88px);
+    line-height:1.02; max-width:16ch; margin:0 auto; }
+
+  /* LOGOS / operator ticker */
+  .ticker-wrap{ padding:2vh 0 16vh; }
+  .ticker-lead{ text-align:center; font-size:11px; letter-spacing:.26em; text-transform:uppercase; font-weight:600; opacity:.7; margin-bottom:34px; }
+  .marquee{ overflow:hidden; width:100%; -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); }
+  .mtrack{ display:flex; align-items:center; gap:64px; width:max-content; will-change:transform; }
+  .mlogo{ color:var(--iron); white-space:nowrap; font-size:26px; opacity:.85; display:flex; align-items:center; gap:9px; }
+  .mlogo.serif{ font-family:var(--serif); font-size:30px; }
+  .mlogo.pp{ font-weight:800; font-style:italic; letter-spacing:-.02em; }
+  .mlogo.bcg{ font-weight:800; letter-spacing:.02em; }
+  .mlogo .dot{ width:14px; height:14px; border:2px solid var(--iron); border-radius:50%; display:inline-block; }
+
+  /* HOW WE WORK */
+  .how{ padding:6vh 0 16vh; text-align:center; }
+  .how h2{ margin-bottom:7vh; }
+  .how-card{ position:relative; margin:0 auto; max-width:1200px; aspect-ratio:16/9;
+    border-radius:8px; overflow:hidden; background:#0c1622; }
+  .how-card .bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .how-card .veil{ position:absolute; inset:0; background:linear-gradient(180deg,rgba(8,17,27,.28),rgba(8,17,27,.55)); }
+  .how-card .label{ position:absolute; top:26px; left:0; right:0; text-align:center;
+    font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--ivory); opacity:.7; }
+  .how-step{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:44px; color:var(--ivory); }
+  .how-step .num{ font-family:var(--serif); font-size:clamp(30px,4vw,58px); opacity:.5; min-width:1ch; }
+  .how-step .word{ font-family:var(--serif); font-size:clamp(44px,7vw,104px); line-height:.9; }
+  .how-arrow{ position:absolute; top:50%; transform:translateY(-50%); width:52px; height:52px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:var(--ivory); opacity:.7; transition:opacity .25s; background:none; border:0; }
+  .how-arrow:hover{ opacity:1; }
+  .how-arrow.prev{ left:22px; } .how-arrow.next{ right:22px; }
+  .how-arrow svg{ width:26px; height:52px; }
+  .how-body{ max-width:52ch; margin:5vh auto 0; font-size:16px; line-height:1.7; color:rgba(8,17,27,.78); }
+
+  /* GALVANISE */
+  .galv{ padding:8vh 0 16vh; position:relative; }
+  .galv h2{ text-align:center; margin-bottom:9vh; }
+  .galv-stage{ position:relative; max-width:1120px; margin:0 auto; padding:0 70px; }
+  .galv-stage .brk{ position:absolute; top:50%; transform:translateY(-50%); width:48px; height:132px; }
+  .galv-stage .brk.l{ left:0; } .galv-stage .brk.r{ right:0; }
+  .galv-tag{ position:absolute; left:-4px; top:50%; transform:translateY(-50%);
+    display:flex; align-items:center; gap:14px; font-size:17px; font-weight:700; white-space:nowrap; }
+  .galv-tag .plus{ opacity:.5; font-weight:400; }
+  .galv-list{ list-style:none; text-align:center; }
+  .galv-list li{ font-family:var(--serif); font-size:clamp(40px,6vw,84px); line-height:1.12;
+    opacity:.28; transition:opacity .5s; }
+  .galv-list li.on{ opacity:1; }
+  .galv-note{ max-width:46ch; margin:9vh 0 0 auto; padding-right:8vw; font-size:16px; line-height:1.7; color:rgba(8,17,27,.78); }
+  .galv-note b{ display:block; font-weight:600; margin-bottom:8px; color:var(--iron); }
+
+  /* MEET THE KNOWLEDGE */
+  .know{ padding:8vh 0 16vh; }
+  .know-head{ text-align:center; margin-bottom:8vh; }
+  .know-head .sub{ margin-top:20px; font-size:16px; line-height:1.6; color:rgba(8,17,27,.72); max-width:44ch; margin-left:auto; margin-right:auto; }
+  .know-grid{ display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:start; }
+  @media(max-width:860px){ .know-grid{ grid-template-columns:1fr; gap:40px; } }
+  .know-col .cap{ display:flex; justify-content:space-between; border-bottom:1px solid rgba(8,17,27,.35); padding-bottom:12px; margin-bottom:34px; }
+  .know-col .cap span{ font-size:10px; letter-spacing:.24em; text-transform:uppercase; font-weight:600; opacity:.6; }
+  .know-lead h3{ font-size:20px; font-weight:700; margin-bottom:18px; }
+  .know-lead p{ font-size:15px; line-height:1.7; color:rgba(8,17,27,.72); max-width:42ch; }
+  .know-rows{ margin-top:auto; }
+  .krow{ display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(8,17,27,.35); padding:20px 2px; font-size:19px; font-weight:700; cursor:default; }
+  .krow .arw{ opacity:.55; font-weight:400; }
+  .know-left{ display:flex; flex-direction:column; min-height:420px; }
+  .know-left .know-lead{ flex:1; }
+  .know-media{ position:relative; border-radius:6px; overflow:hidden; background:#0c1622; aspect-ratio:740/416; }
+  .know-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .know-stats{ display:flex; justify-content:flex-end; gap:26px; margin-bottom:14px;
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:600; opacity:.6; }
+  .alfred{ position:absolute; left:24px; right:24px; bottom:24px; height:56px; border-radius:28px;
+    background:rgba(250,247,230,.16); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(250,247,230,.28); display:flex; align-items:center; padding:0 8px 0 22px; }
+  .alfred .name{ font-family:var(--serif); font-size:22px; color:var(--ivory); }
+  .alfred .segs{ flex:1; display:flex; align-items:center; gap:0; margin:0 16px; }
+  .alfred .segs i{ width:1px; height:26px; background:rgba(250,247,230,.4); margin:0 26px; }
+  .alfred .logbtn{ margin-left:auto; height:40px; padding:0 22px; border-radius:20px; background:var(--ivory); color:var(--iron);
+    font-size:12px; font-weight:700; letter-spacing:.04em; display:flex; align-items:center; border:0; }
+
+  /* SECURITY */
+  .sec{ padding:8vh 0 16vh; }
+  .sec h2{ text-align:center; margin-bottom:9vh; }
+  .sec-grid{ display:grid; grid-template-columns:1fr 1fr; column-gap:80px; }
+  @media(max-width:860px){ .sec-grid{ grid-template-columns:1fr; } }
+  .sitem{ display:grid; grid-template-columns:52px 1fr; gap:14px; align-items:start;
+    border-top:1px solid rgba(8,17,27,.4); padding:22px 0; }
+  .sitem .idx{ font-size:11px; letter-spacing:.1em; opacity:.55; padding-top:5px; }
+  .sitem .txt{ font-size:18px; font-weight:700; line-height:1.35; }
+
+  /* WORK WITH US */
+  .cta{ padding:6vh 0 16vh; text-align:center; }
+  .cta-btn{ display:inline-flex; align-items:center; justify-content:center;
+    background:var(--rust); color:var(--ivory); font-family:var(--serif); font-weight:400;
+    font-size:clamp(30px,4.4vw,52px); line-height:1; padding:38px 90px; border-radius:8px;
+    text-decoration:none; transition:transform .3s cubic-bezier(.22,1,.36,1), background .3s; }
+  .cta-btn:hover{ transform:translateY(-3px); background:#d95c34; }
+  .cta p{ margin-top:26px; font-size:11px; letter-spacing:.24em; text-transform:uppercase; opacity:.7; }
+
+  /* FOOTER */
+  .foot{ background:var(--iron); color:var(--ivory); padding:12vh 0 8vh; }
+  .foot .inner{ max-width:1004px; margin:0 auto; padding:0 40px; position:relative; text-align:center; }
+  .foot .flogo{ font-family:var(--serif); font-size:26px; letter-spacing:.02em; margin-bottom:34px; opacity:.95; }
+  .foot .ftag{ position:relative; display:inline-block; font-family:var(--serif); font-weight:400;
+    font-size:clamp(30px,4.6vw,60px); line-height:1.06; max-width:14ch; }
+  .foot .brk{ position:absolute; top:50%; transform:translateY(-50%); width:40px; height:150px; opacity:.9; }
+  .foot .brk.l{ left:-90px; } .foot .brk.r{ right:-90px; }
+  @media(max-width:760px){ .foot .brk{ display:none; } }
+  .foot .links{ margin-top:44px; display:flex; flex-direction:column; gap:10px; align-items:center;
+    font-size:11px; letter-spacing:.2em; text-transform:uppercase; opacity:.7; }
+  .foot .links a{ color:var(--ivory); text-decoration:none; }
+  .foot .links a:hover{ opacity:1; text-decoration:underline; }
+</style>
+</head>
+<body>
+
+  <svg class="goo-defs"><defs>
+    <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="2" result="b"/>
+      <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"/></filter>
+  </defs></svg>
+
+  <canvas id="cursor"></canvas>
+
+  <img id="src-first" src="assets/frame_first.jpg" hidden alt="">
+  <img id="src-last"  src="assets/frame_last.jpg"  hidden alt="">
+
+  <section class="hero-scroll">
+    <div class="hero-sticky" id="sticky">
+      <div class="backdrop"></div>
+      <video id="hero-video" muted playsinline preload="auto" poster="assets/frame_first.jpg">
+        <source src="assets/river_scrub.mp4" type="video/mp4">
+      </video>
+      <div class="dither-layer" id="dlayer"><canvas id="dither" width="160" height="90"></canvas></div>
+      <div class="hero-ui">
+        <div class="headline" id="headline"><span class="hl">Meet your new<br>AI Department.</span><span class="hsub">Built for the everyday economy.</span></div>
+        <div class="hint" id="hint">Scroll</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="chrome">
+    <div class="nav" id="nav"><img class="nav-dark" src="assets/Nav_Bar-dark.svg" alt="Ironbridge navigation"><img class="nav-ivory" src="assets/Nav_Bar.svg" alt=""></div>
+    <div class="logo-mover" id="logoMover"><div class="logo-inner">
+      <img class="lg lg-front" id="lgFront" src="assets/Logo-full-dark.svg" alt="Ironbridge">
+      <img class="lg lg-wi" id="lgWI" src="assets/Logo.svg" alt="">
+      <img class="lg lg-wd" id="lgWD" src="assets/Logo-dark.svg" alt="">
+    </div></div>
+    <div class="heat" id="heat"><img class="heat-dark" src="assets/Heat-dark.svg" alt="1300C white heat"><img class="heat-ivory" src="assets/Heat_Ticker.svg" alt=""></div>
+    <div class="strap" id="strap">The AI department for<br>the everyday economy.</div>
+  </div>
+
+  <main class="content">
+    <div class="forge">
+
+      <!-- STATEMENT -->
+      <section class="statement">
+        <h2 class="reveal">Frontier AI is moving faster than ever.</h2>
+      </section>
+
+      <!-- OPERATOR LOGOS -->
+      <div class="ticker-wrap">
+        <div class="ticker-lead reveal">Built &amp; supported by leading AI operators:</div>
+        <div class="marquee"><div class="mtrack" id="mtrack"></div></div>
+      </div>
+
+      <!-- HOW WE WORK -->
+      <section class="how wrap">
+        <h2 class="h2 reveal">How we work.</h2>
+        <div class="how-card reveal">
+          <img class="bg" src="assets/frame_first.jpg" alt="">
+          <div class="veil"></div>
+          <div class="label">how we work</div>
+          <div class="how-step">
+            <span class="num" id="howNum">1</span>
+            <span class="word" id="howWord">Discover.</span>
+          </div>
+          <button class="how-arrow prev" id="howPrev" aria-label="Previous step">
+            <svg viewBox="0 0 26 52" fill="none"><path d="M24 2 4 26l20 24" stroke="currentColor" stroke-width="3"/></svg>
+          </button>
+          <button class="how-arrow next" id="howNext" aria-label="Next step">
+            <svg viewBox="0 0 26 52" fill="none"><path d="M2 2 22 26 2 50" stroke="currentColor" stroke-width="3"/></svg>
+          </button>
+        </div>
+        <p class="how-body reveal" id="howBody">We map where AI helps in your firm, and where to start. Discovery and scoping. AI workshops. First pilots. A strategy worth committing to.</p>
+      </section>
+
+      <!-- GALVANISE -->
+      <section class="galv wrap">
+        <h2 class="h2 reveal">Galvanise change across your firm.</h2>
+        <div class="galv-stage reveal">
+          <svg class="brk l" viewBox="0 0 48 132" fill="none"><path d="M46 2H10a8 8 0 0 0-8 8v112a8 8 0 0 0 8 8h36" stroke="currentColor" stroke-width="16"/></svg>
+          <svg class="brk r" viewBox="0 0 48 132" fill="none"><path d="M2 2h36a8 8 0 0 1 8 8v112a8 8 0 0 1-8 8H2" stroke="currentColor" stroke-width="16"/></svg>
+          <div class="galv-tag">Your AI Department <span class="plus">+</span></div>
+          <ul class="galv-list" id="galvList">
+            <li>Finance</li>
+            <li>Operations</li>
+            <li>Customer service</li>
+            <li>New business</li>
+          </ul>
+        </div>
+        <p class="galv-note reveal"><b>To unlock more of what makes us human.</b>Every hour your AI Department gives back goes to the work only your people can do: the judgement, the relationships, the craft.</p>
+      </section>
+
+      <!-- MEET THE KNOWLEDGE -->
+      <section class="know wrap">
+        <div class="know-head">
+          <h2 class="h2 reveal">Meet the Knowledge.</h2>
+          <p class="sub reveal">A living map of what your firm knows, brought together in one secure place, kept yours, and put to work.</p>
+        </div>
+        <div class="know-grid">
+          <div class="know-col know-left reveal">
+            <div class="cap"><span>stages</span></div>
+            <div class="know-lead">
+              <h3>Your firm already knows.</h3>
+              <p>Your firm already knows how to win this moment. The problem is where that knowledge lives: scattered across systems, documents and inboxes, and in your best people&#39;s heads.</p>
+            </div>
+            <div class="know-rows">
+              <div class="krow"><span>A single interface.</span><span class="arw">&#8599;</span></div>
+              <div class="krow"><span>Model agnostic.</span><span class="arw">&#8599;</span></div>
+              <div class="krow"><span>The five verbs.</span><span class="arw">&#8599;</span></div>
+            </div>
+          </div>
+          <div class="know-col know-right reveal">
+            <div class="cap"><span>knowledge</span></div>
+            <div class="know-stats"><span>17h 45m</span><span>78m today</span><span>12 to log</span></div>
+            <div class="know-media">
+              <img src="assets/frame_last.jpg" alt="">
+              <div class="alfred">
+                <span class="name">Alfred</span>
+                <span class="segs"><i></i><i></i></span>
+                <button class="logbtn">Log Time</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECURITY AND CONTROL -->
+      <section class="sec wrap">
+        <h2 class="h2 reveal">Security and control.</h2>
+        <div class="sec-grid">
+          <div class="sitem reveal"><span class="idx">/01</span><span class="txt">Flexible deployment options.</span></div>
+          <div class="sitem reveal"><span class="idx">/08</span><span class="txt">Mirrored source-tool permissions.</span></div>
+          <div class="sitem reveal"><span class="idx">/02</span><span class="txt">Fully managed, sealed on shared infrastructure, or inside your own Microsoft cloud.</span></div>
+          <div class="sitem reveal"><span class="idx">/09</span><span class="txt">Identity from your Entra, Google, and role-based access.</span></div>
+          <div class="sitem reveal"><span class="idx">/03</span><span class="txt">Data governance.</span></div>
+          <div class="sitem reveal"><span class="idx">/10</span><span class="txt">Full audit logs.</span></div>
+          <div class="sitem reveal"><span class="idx">/04</span><span class="txt">Encrypted at rest and in transit.</span></div>
+          <div class="sitem reveal"><span class="idx">/11</span><span class="txt">Every interaction scoped, logged and traceable.</span></div>
+          <div class="sitem reveal"><span class="idx">/05</span><span class="txt">Never used to train public models.</span></div>
+          <div class="sitem reveal"><span class="idx">/12</span><span class="txt">Compliance.</span></div>
+          <div class="sitem reveal"><span class="idx">/06</span><span class="txt">Access controls.</span></div>
+          <div class="sitem reveal"><span class="idx">/13</span><span class="txt">Command centre.</span></div>
+          <div class="sitem reveal"><span class="idx">/07</span><span class="txt">Least-privilege by design.</span></div>
+          <div class="sitem reveal"><span class="idx">/14</span><span class="txt">Usage, spend and impact for every deployment, in one place.</span></div>
+        </div>
+      </section>
+
+      <!-- WORK WITH US -->
+      <section class="cta wrap">
+        <a class="cta-btn reveal" href="mailto:hello@ironbridge.tech">Work with us.</a>
+        <p class="reveal">Tell us about your firm and what you are trying to solve.</p>
+      </section>
+
+    </div><!-- /forge -->
+
+    <!-- FOOTER -->
+    <footer class="foot">
+      <div class="inner">
+        <div class="flogo">Ironbridge</div>
+        <div class="ftag">
+          <svg class="brk l" viewBox="0 0 40 150" fill="none"><path d="M38 3H12a8 8 0 0 0-8 8v128a8 8 0 0 0 8 8h26" stroke="currentColor" stroke-width="12"/></svg>
+          The AI department for the everyday economy.
+          <svg class="brk r" viewBox="0 0 40 150" fill="none"><path d="M2 3h26a8 8 0 0 1 8 8v128a8 8 0 0 1-8 8H2" stroke="currentColor" stroke-width="12"/></svg>
+        </div>
+        <div class="links">
+          <a href="#">careers</a>
+          <a href="#">privacy policy</a>
+          <a href="#">registration information</a>
+          <a href="#">terms of use</a>
+          <a href="mailto:hello@ironbridge.tech">hello@ironbridge.tech</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+<script>
+(function(){
+  "use strict";
+  var PAL=[[0xfa,0xf7,0xe6],[0xf0,0xb9,0x76],[0xdf,0x85,0x51],[0xcf,0x51,0x2b],[0x41,0x48,0x8a],[0x0a,0x11,0x1a]];
+  var AMP=50, CW=300, CH=169;
+  function bayer(n){ if(n===1) return [[0]]; var s=bayer(n/2),h=n/2,o=[];
+    for(var y=0;y<n;y++) o.push(new Array(n).fill(0));
+    for(var yy=0;yy<h;yy++) for(var xx=0;xx<h;xx++){ var v=s[yy][xx];
+      o[yy][xx]=4*v; o[yy][xx+h]=4*v+2; o[yy+h][xx]=4*v+3; o[yy+h][xx+h]=4*v+1; } return o; }
+  var B=bayer(8);
+  function nearest(r,g,b){ var bi=0,bd=1e9; for(var i=0;i<6;i++){ var p=PAL[i], dr=r-p[0],dg=g-p[1],db=b-p[2],d=dr*dr+dg*dg+db*db; if(d<bd){bd=d;bi=i;} } return PAL[bi]; }
+
+  var dither=document.getElementById('dither'), dctx=dither.getContext('2d');
+  var off=document.createElement('canvas'), octx=off.getContext('2d');
+  var RND=null;
+  function setGrain(cw){ CW=cw; CH=Math.round(cw*9/16); dither.width=CW; dither.height=CH; off.width=CW; off.height=CH;
+    RND=new Float32Array(CW*CH); for(var k=0;k<RND.length;k++) RND[k]=Math.random(); }
+  setGrain(300);
+  var firstImg=document.getElementById('src-first'), lastImg=document.getElementById('src-last');
+
+  function renderDither(img, reveal){
+    if(!img.complete || !img.naturalWidth){ dctx.clearRect(0,0,CW,CH); return; }
+    octx.drawImage(img,0,0,CW,CH);
+    var src=octx.getImageData(0,0,CW,CH).data, out=dctx.createImageData(CW,CH), o=out.data;
+    for(var i=0;i<src.length;i+=4){ var px=i>>2;
+      if(RND[px]<reveal){ o[i]=src[i]; o[i+1]=src[i+1]; o[i+2]=src[i+2]; o[i+3]=255; }   // dots reveal the video frame, no palette
+      else { o[i+3]=0; } }
+    dctx.putImageData(out,0,0);
+  }
+
+  var heroScroll=document.querySelector('.hero-scroll');
+  var video=document.getElementById('hero-video'), dlayer=document.getElementById('dlayer');
+  var nav=document.getElementById('nav'), navIvory=nav.querySelector('.nav-ivory'), mover=document.getElementById('logoMover');
+  var lgFront=document.getElementById('lgFront'), lgWI=document.getElementById('lgWI'), lgWD=document.getElementById('lgWD');
+  var headline=document.getElementById('headline'), heat=document.getElementById('heat'), heatIvory=heat.querySelector('.heat-ivory');
+  var strap=document.getElementById('strap'), hint=document.getElementById('hint');
+
+  var DI0=0.03, DI1=0.16, DX=0.24, S1=0.82, DO=0.88;
+  var duration=10, targetTime=0, uiLit=0;
+  video.addEventListener('loadedmetadata', function(){ duration=video.duration||10; });
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function inv(p,a,b){ return clamp((p-a)/(b-a),0,1); }
+  function heroProgress(){ var h=heroScroll.offsetHeight-window.innerHeight; return clamp((window.scrollY-heroScroll.offsetTop)/h,0,1); }
+
+  function logoTransform(t){
+    var W=innerWidth,H=innerHeight,baseW=600,aspect=98/510;   // rasterise the SVG large, only ever scale DOWN (stays crisp)
+    var frontSc=Math.min(0.40*W,560)/baseW, dockSc=150/baseW;
+    var sc=lerp(frontSc,dockSc,t);
+    var wS=baseW*sc, hS=baseW*aspect*sc, hEnd=150*aspect;
+    var cyStart=H/2, cyEnd=H-26-hEnd/2, cy=lerp(cyStart,cyEnd,t);
+    return 'translate('+(W/2-wS/2)+'px,'+(cy-hS/2)+'px) scale('+sc+')';
+  }
+
+  function applyHero(p){
+    var dop = p<DI1 ? 1 : p<DX ? 1-inv(p,DI1,DX) : p<S1 ? 0 : p<DO ? inv(p,S1,DO) : 1;
+    dlayer.style.opacity=dop;
+    if(p<DX)        renderDither(firstImg, inv(p,DI0,DI1));
+    else if(p>=S1)  renderDither(lastImg, p<DO ? 1 : 1-inv(p,DO,1.0));
+    if(p>=DI1 && p<=DO) targetTime = inv(p,DX,S1)*duration;
+
+    mover.style.transform = logoTransform(inv(p,0.06,0.30));
+
+    var lit=Math.min(inv(p,0.095,0.20), 1-inv(p,S1,0.98)); uiLit=lit;
+    var d=inv(p,0.095,0.22), endDark=inv(p,S1,0.98);  // d: bracketed->wordmark; endDark: bone->dark at the ivory end
+    lgFront.style.opacity = 1-d;                      // dark bracketed, only at the start
+    lgWI.style.opacity    = d*(1-endDark);            // bone wordmark over the footage
+    lgWD.style.opacity    = d*endDark;                // dark wordmark once the dither goes away
+
+    heatIvory.style.opacity=lit; navIvory.style.opacity=lit;
+    var uic='rgb('+Math.round(lerp(8,250,lit))+','+Math.round(lerp(17,247,lit))+','+Math.round(lerp(27,230,lit))+')';
+    strap.style.color=uic; hint.style.color=uic;
+
+    nav.style.opacity=inv(p,0.22,0.34);
+    headline.style.opacity=inv(p,0.54,0.68);
+    hint.style.opacity = (1-inv(p,0,0.04))*0.7;
+  }
+
+  var seeking=false;
+  function frame(){
+    var p=heroProgress(); applyHero(p);
+    if(video.readyState>=1 && !seeking && isFinite(targetTime) && Math.abs(video.currentTime-targetTime)>0.01){ seeking=true; try{ video.currentTime=targetTime; }catch(e){} }
+    requestAnimationFrame(frame);
+  }
+  video.addEventListener('seeked', function(){ seeking=false; });
+  video.addEventListener('error', function(){ seeking=false; });
+  firstImg.addEventListener('load', function(){ applyHero(heroProgress()); });
+  applyHero(0);
+  requestAnimationFrame(frame);
+
+  // operator ticker
+  var logos=[{t:'Palantir',c:'dot'},{t:'McKinsey & Company',c:'serif'},{t:'J.P.Morgan',c:'serif'},{t:'PayPal',c:'pp'},{t:'BCG',c:'bcg'}];
+  var track=document.getElementById('mtrack');
+  (function(){ var html=''; for(var r=0;r<3;r++) for(var i=0;i<logos.length;i++){ var l=logos[i],
+    cls='mlogo'+(l.c==='serif'?' serif':l.c==='pp'?' pp':l.c==='bcg'?' bcg':''), mark=l.c==='dot'?'<span class="dot"></span>':'';
+    html+='<span class="'+cls+'">'+mark+l.t+'</span>'; } track.innerHTML=html; })();
+  var mx=0, vel=0, baseSpeed=0.6, lastY=window.scrollY;
+  addEventListener('scroll', function(){ var y=window.scrollY; vel+=(y-lastY)*0.35; lastY=y; });
+  function marquee(){ var half=track.scrollWidth/3; mx-=baseSpeed+vel; vel*=0.9;
+    if(half>0){ while(mx<=-half) mx+=half; while(mx>0) mx-=half; } track.style.transform='translateX('+mx+'px)'; requestAnimationFrame(marquee); }
+  requestAnimationFrame(marquee);
+
+  // pixel-trail cursor (grid, adaptive colour)
+  var cv=document.getElementById('cursor'), cx=cv.getContext('2d');
+  var CELL=12, cols=0, rows=0, ages=null, MAXAGE_MS=350;
+  function buildGrid(){ cv.width=innerWidth; cv.height=innerHeight;
+    CELL=Math.max(3, Math.round(Math.min(cv.width,cv.height)*0.012));
+    cols=Math.ceil(cv.width/CELL); rows=Math.ceil(cv.height/CELL);
+    ages=new Float32Array(cols*rows); for(var i=0;i<ages.length;i++) ages[i]=1e9; }
+  buildGrid(); addEventListener('resize', buildGrid);
+  function activate(px,py){ var c=Math.floor(px/CELL), r=Math.floor(py/CELL); if(c>=0&&c<cols&&r>=0&&r<rows) ages[r*cols+c]=0; }
+  var lmx=-1, lmy=-1;
+  addEventListener('mousemove', function(e){
+    if(lmx<0){ activate(e.clientX,e.clientY); }
+    else { var d=Math.hypot(e.clientX-lmx,e.clientY-lmy), steps=Math.max(1,Math.ceil(d/(CELL*0.5)));
+      for(var i=0;i<=steps;i++){ var t=i/steps; activate(lmx+(e.clientX-lmx)*t, lmy+(e.clientY-lmy)*t); } }
+    lmx=e.clientX; lmy=e.clientY;
+  });
+  var last=performance.now();
+  function cursorFrame(now){ var dt=now-last; last=now; cx.clearRect(0,0,cv.width,cv.height);
+    var r=Math.round(lerp(8,250,uiLit)), g=Math.round(lerp(17,247,uiLit)), b=Math.round(lerp(27,230,uiLit)), pre='rgba('+r+','+g+','+b+',';
+    for(var idx=0; idx<ages.length; idx++){ var a=ages[idx]; if(a>=MAXAGE_MS) continue; ages[idx]=a+dt;
+      cx.fillStyle=pre+(1-a/MAXAGE_MS)+')'; cx.fillRect((idx%cols)*CELL, ((idx/cols)|0)*CELL, CELL-1, CELL-1); }
+    requestAnimationFrame(cursorFrame); }
+  requestAnimationFrame(cursorFrame);
+})();
+</script>
+
+<script>
+/* v3 section behaviour: scroll reveals, how-we-work stepper, galvanise cycle */
+(function(){
+  "use strict";
+
+  // reveal on scroll
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold:0.16, rootMargin:'0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  // how we work — three stages
+  var steps = [
+    { n:'1', w:'Discover.', b:'We map where AI helps in your firm, and where to start. Discovery and scoping. AI workshops. First pilots. A strategy worth committing to.' },
+    { n:'2', w:'Deploy.',   b:'We build into your systems and your permissions, on site with your team. Live where the work happens, wired into the tools you already run.' },
+    { n:'3', w:'Deepen.',   b:'We improve what is live, enable your team, and build the next one faster than the last. Momentum that compounds across your firm.' }
+  ];
+  var hi = 0;
+  var howNum = document.getElementById('howNum'), howWord = document.getElementById('howWord'), howBody = document.getElementById('howBody');
+  function setStep(i){ hi = (i+steps.length)%steps.length; var s = steps[hi];
+    howNum.textContent = s.n; howWord.textContent = s.w; howBody.textContent = s.b; }
+  var hp = document.getElementById('howPrev'), hn = document.getElementById('howNext');
+  if(hp && hn){ hp.addEventListener('click', function(){ setStep(hi-1); }); hn.addEventListener('click', function(){ setStep(hi+1); }); }
+
+  // galvanise — cycle the active capability
+  var items = Array.prototype.slice.call(document.querySelectorAll('#galvList li'));
+  if(items.length){ var gi=0; items[0].classList.add('on');
+    setInterval(function(){ items[gi].classList.remove('on'); gi=(gi+1)%items.length; items[gi].classList.add('on'); }, 2200); }
+})();
+</script>
+</body>
+</html>
