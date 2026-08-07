@@ -122,6 +122,9 @@
   .stmt-run{ position:relative; height:300vh; }
   .stmt-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; padding:0 6vw; text-align:center; }
   .stmt-h{ font-family:var(--serif); font-weight:400; font-size:var(--fs-display); letter-spacing:0; color:var(--iron); }
+  /* while the stage is still approaching, the heading is viewport-fixed — a rAF-driven
+     counter-translate lags the scroll by a frame and shakes; fixed positioning doesn't */
+  .stmt-h.held{ position:fixed; left:0; right:0; top:50%; transform:translateY(-50%); padding:0 6vw; }
   .stmt-h .line{ display:block; line-height:1; }
   .stmt-h .line + .line{ margin-top:-.26em; }
   .stmt-h .w{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.14em; line-height:1; }
@@ -938,9 +941,8 @@
        held at the viewport centre — the sheet slides in bone-over-bone (invisible), so
        the words pop in a fixed spot instead of riding up with the page */
     if(!REDUCE){
-      var stTop=elTop(stmtRun), preOff=sy-stTop;
-      if(preOff<0 && sy>=(heroScroll.offsetHeight-innerHeight)*DEND) stmtH.style.transform='translateY('+preOff+'px)';
-      else stmtH.style.removeProperty('transform');
+      var stTop=elTop(stmtRun);
+      stmtH.classList.toggle('held', sy<stTop && sy>=(heroScroll.offsetHeight-innerHeight)*DEND);
       stmtP += (stmtTarget()-stmtP)*(1-Math.exp(-dt/SCRUB_TAU));
       var tl=stmtP*stmtT;
       for(var i=0;i<stmtInners.length;i++){
