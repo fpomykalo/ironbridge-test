@@ -38,10 +38,11 @@
   .h2{ font-family:var(--serif); font-weight:400; font-size:var(--fs-h2); line-height:1; letter-spacing:0; }
   .body{ font-family:var(--sans); font-weight:400; font-size:14px; line-height:20px; }
 
-  /* noise overlay: above backgrounds/media, below text & vectors; stretched to browser size */
-  .noise{ position:absolute; inset:0; pointer-events:none;
-    background:url('assets/images/noise.png'); background-size:100vw 100vh; background-repeat:repeat;
-    mix-blend-mode:overlay; opacity:.55; }
+  /* noise overlay: ONE viewport-fixed layer over the whole page — a single tile, so it
+     never repeats, never seams between sections, and holds still while you scroll */
+  .noise{ position:fixed; inset:0; z-index:50; pointer-events:none;
+    background:url('assets/images/noise.png'); background-size:100vw 100vh; background-repeat:no-repeat;
+    mix-blend-mode:overlay; opacity:.5; }
 
   /* ---------- HERO ---------- */
   .hero-scroll{ position:relative; height:660vh; z-index:1; }
@@ -54,7 +55,6 @@
     background:url('assets/images/vignette.png'); background-size:100% 100%; background-repeat:no-repeat; }
   .dither-layer{ position:absolute; inset:0; z-index:3; }
   #dither{ object-fit:cover; image-rendering:pixelated; }
-  .hero-sticky > .noise{ z-index:4; }
   .hero-ui{ position:absolute; inset:0; z-index:6; pointer-events:none; }
 
   .chrome{ position:fixed; inset:0; z-index:55; pointer-events:none; }
@@ -103,9 +103,6 @@
       #e07d43 18%, #cf512b 22%, #c5543a 33%, #bd6a5a 40%,
       #c69a86 48%, #c69a86 74%, #a2a8c6 80%, #7c84b6 85%,
       #5b63a0 89%, #3a4274 92%, #1c2440 100%); }
-  .forge::before{ content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
-    background:url('assets/images/noise.png'); background-size:100vw 100vh; background-repeat:repeat;
-    mix-blend-mode:overlay; opacity:.5; }
   .forge > *{ position:relative; z-index:1; }
   .wrap{ max-width:1440px; margin:0 auto; padding:0 80px; }   /* Figma: 1280 content inside the 1440 frame */
   @media(max-width:900px){ .wrap{ padding:0 24px; } }
@@ -149,7 +146,6 @@
   @media(max-width:900px){ .how-card{ width:calc(100vw - 48px); } }
   .how-card .bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .how-card .veil, .know-media .veil{ position:absolute; inset:0; background:rgba(0,0,0,.4); }
-  .how-card .noise{ z-index:3; }                              /* noise stays above the video AND the dither, below the text */
   .how-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:4; color:var(--ivory); }
   .how-card .hlabel{ text-align:center; color:var(--ivory); opacity:.8; margin-bottom:100px; }
   .how-step{ display:flex; flex-direction:column; align-items:center; gap:10px; color:var(--ivory); }
@@ -238,7 +234,6 @@
   .krow-body{ margin-top:14px; font-size:14px; line-height:20px; color:var(--iron); max-width:44ch; white-space:pre-line; }
   .know-media{ position:relative; border-radius:8px; overflow:hidden; background:#0c1622; aspect-ratio:740/416; }
   .know-media img, .know-media video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  .know-media .noise{ z-index:1; }
   .alfred{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(528px, 88%); height:56px; border-radius:28px; z-index:2;
     background:rgba(250,247,230,.14); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
     border:1px solid rgba(250,247,230,.26); display:flex; align-items:center; padding:0 8px 0 22px; color:var(--ivory); }
@@ -310,12 +305,13 @@
       <div class="hero-shade"></div>
       <div class="hero-vignette"></div>
       <div class="dither-layer" id="dlayer"><canvas id="dither" width="160" height="90"></canvas></div>
-      <div class="noise"></div>
       <div class="hero-ui">
         <div class="headline" id="headline"><span class="hl">Meet your new<br>AI Department.</span><span class="hsub">Built for the everyday economy.</span></div>
       </div>
     </div>
   </section>
+
+  <div class="noise" aria-hidden="true"></div>
 
   <div class="chrome">
     <div class="nav" id="nav">
@@ -366,7 +362,6 @@
               <source src="assets/videos/video-1.mp4" type="video/mp4">
             </video>
             <div class="veil"></div>
-            <div class="noise"></div>
             <div class="how-center">
               <div class="hlabel eyebrow">how we work</div>
               <div class="how-step" id="howStep">
@@ -441,7 +436,6 @@
                 <source src="assets/videos/video-2-web.mp4" type="video/mp4">
               </video>
               <div class="veil"></div>
-              <div class="noise"></div>
               <div class="alfred">
                 <span class="name">Alfred</span>
                 <span class="segs">
