@@ -21,6 +21,16 @@
   *{ box-sizing:border-box; margin:0; padding:0; }
   body{ background:var(--iron); color:var(--ivory); font-family:var(--sans); -webkit-font-smoothing:antialiased; overflow-x:hidden; cursor:none; }
   #cursor{ position:fixed; inset:0; z-index:70; pointer-events:none; filter:url(#goo); }
+
+  /* preloader: iron curtain halves with a Charger count, opening centre-out */
+  #preloader{ position:fixed; inset:0; z-index:60; }
+  #preloader.done{ display:none; }
+  #preloader .pre-half{ position:absolute; top:0; bottom:0; width:51%; background:var(--iron); will-change:transform; }
+  #preloader .pre-half.l{ left:0; }
+  #preloader .pre-half.r{ right:0; }
+  #preloader .pre-count{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-family:var(--serif); font-weight:400; font-size:var(--fs-h2); line-height:1; color:var(--ivory);
+    font-variant-numeric:tabular-nums; }
   .goo-defs{ position:absolute; width:0; height:0; }
 
   /* shared type primitives (exact Figma) */
@@ -281,6 +291,12 @@
   </defs></svg>
 
   <canvas id="cursor"></canvas>
+
+  <div id="preloader" aria-hidden="true">
+    <div class="pre-half l"></div>
+    <div class="pre-half r"></div>
+    <span class="pre-count" id="preCount">0%</span>
+  </div>
 
   <section class="hero-scroll">
     <div class="hero-sticky" id="sticky">
@@ -918,8 +934,13 @@
     heatLabel.textContent=heatLabelFor(temp);
     heatFill.style.height=(tp*100)+'%';
 
-    /* statement clip-rise (scrub-smoothed) */
+    /* statement clip-rise (scrub-smoothed); from the moment the dither lands the text is
+       held at the viewport centre — the sheet slides in bone-over-bone (invisible), so
+       the words pop in a fixed spot instead of riding up with the page */
     if(!REDUCE){
+      var stTop=elTop(stmtRun), preOff=sy-stTop;
+      if(preOff<0 && sy>=(heroScroll.offsetHeight-innerHeight)*DEND) stmtH.style.transform='translateY('+preOff+'px)';
+      else stmtH.style.removeProperty('transform');
       stmtP += (stmtTarget()-stmtP)*(1-Math.exp(-dt/SCRUB_TAU));
       var tl=stmtP*stmtT;
       for(var i=0;i<stmtInners.length;i++){
@@ -1027,15 +1048,26 @@
       for(var i=0;i<=steps2;i++){ var t=i/steps2; activate(lmx+(e.clientX-lmx)*t, lmy+(e.clientY-lmy)*t); } }
     lmx=e.clientX; lmy=e.clientY;
   });
-  var lastC=performance.now(), footMix=0, FOOTC=[17,26,44];   // the footer dither's rendered colour: iron @55% over #1c2440
+  var lastC=performance.now(), footMix=0, footMode=false, FOOTC=[17,26,44];   // the footer dither's measured on-screen dot colour
   function cursorFrame(now){ var dt=now-lastC; lastC=now; cx.clearRect(0,0,cv.width,cv.height);
     var inFoot=(window.scrollY+innerHeight*0.5)>=elTop(footEl) ? 1 : 0;
-    footMix+=(inFoot-footMix)*0.08;
+    footMix+=(inFoot-footMix)*Math.min(1, dt*0.012);          // time-based: settles in ~a third of a second
+    /* in the footer the trail becomes the wave's own texture: goo off, 3px checker dots
+       of the dither's exact rendered colour — a solid goo blob would read darker */
+    var footy=footMix>0.5;
+    if(footy!==footMode){ footMode=footy; cv.style.filter=footy?'none':''; }
     var r=Math.round(lerp(lerp(IRON[0],IVORY[0],uiLit),FOOTC[0],footMix)),
         g=Math.round(lerp(lerp(IRON[1],IVORY[1],uiLit),FOOTC[1],footMix)),
         b=Math.round(lerp(lerp(IRON[2],IVORY[2],uiLit),FOOTC[2],footMix)), pre='rgba('+r+','+g+','+b+',';
     for(var idx2=0; idx2<ages.length; idx2++){ var a=ages[idx2]; if(a>=MAXAGE_MS) continue; ages[idx2]=a+dt;
-      cx.fillStyle=pre+(1-a/MAXAGE_MS)+')'; cx.fillRect((idx2%cols)*CELL, ((idx2/cols)|0)*CELL, CELL-1, CELL-1); }
+      cx.fillStyle=pre+(1-a/MAXAGE_MS)+')';
+      var X=(idx2%cols)*CELL, Y=((idx2/cols)|0)*CELL;
+      if(!footy){ cx.fillRect(X, Y, CELL-1, CELL-1); }
+      else {
+        for(var yy=Y; yy<Y+CELL-1; yy+=3) for(var xx=X; xx<X+CELL-1; xx+=3)
+          if(((xx/3|0)+(yy/3|0))%2===0) cx.fillRect(xx, yy, 3, 3);
+      }
+    }
     requestAnimationFrame(cursorFrame); }
   requestAnimationFrame(cursorFrame);
 
@@ -1128,6 +1160,37 @@
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){
     document.querySelectorAll('.tr-roll').forEach(function(m){ var a=m.querySelector('.tr-stack > span'); if(a) m.style.height=a.offsetHeight+'px'; });
   });
+
+  /* ---------- preloader: Charger count, centre-out curtain reveal ----------
+     motion values from the reference (count 1.2s power1.out; fade 0.4s power2.in +0.1;
+     wipe 1.0s power2.inOut starting 0.15s before the fade ends; 250ms initial delay) —
+     only the wipe direction is ours: the halves push out from the middle */
+  (function(){
+    var pre=document.getElementById('preloader'); if(!pre) return;
+    if(window.scrollY>50){ pre.classList.add('done'); return; }   // refreshed mid-page: no curtain
+    var cnt=document.getElementById('preCount');
+    var L=pre.querySelector('.pre-half.l'), R=pre.querySelector('.pre-half.r');
+    var CD=REDUCE?0.3:1.2, WD=REDUCE?0.3:1.0;
+    document.documentElement.style.overflow='hidden';
+    function quadOut(x){ return 1-(1-x)*(1-x); }
+    function cubicIn(x){ return x*x*x; }
+    function cubicInOut(x){ return x<0.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2; }
+    var t0=null;
+    function tick(now){
+      if(t0===null) t0=now;
+      var t=(now-t0)/1000;
+      cnt.textContent=Math.round(quadOut(clamp(t/CD,0,1))*100)+'%';
+      var f=cubicIn(clamp((t-(CD+0.1))/0.4,0,1));
+      cnt.style.opacity=1-f; cnt.style.transform='translate(-50%,-50%) scale('+(1-0.15*f)+')';
+      var w=clamp((t-(CD+0.35))/WD,0,1);
+      var we=cubicInOut(w);
+      L.style.transform='translateX('+(-101*we)+'%)';
+      R.style.transform='translateX('+(101*we)+'%)';
+      if(w>=1){ pre.classList.add('done'); document.documentElement.style.removeProperty('overflow'); return; }
+      requestAnimationFrame(tick);
+    }
+    setTimeout(function(){ requestAnimationFrame(tick); }, 250);
+  })();
 
   /* ---------- scroll reveals ---------- */
   var io = new IntersectionObserver(function(entries){
