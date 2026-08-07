@@ -41,7 +41,7 @@
   #hero-video{ object-fit:cover; z-index:1; }
   .hero-vignette{ position:absolute; inset:0; z-index:2; pointer-events:none;
     background:url('assets/images/vignette.png'); background-size:100% 100%; background-repeat:no-repeat; }
-  .dither-layer{ position:absolute; inset:0; z-index:3; background:var(--ivory); }
+  .dither-layer{ position:absolute; inset:0; z-index:3; }
   #dither{ object-fit:cover; image-rendering:pixelated; }
   .hero-sticky > .noise{ z-index:4; }
   .hero-ui{ position:absolute; inset:0; z-index:6; pointer-events:none; }
@@ -138,7 +138,7 @@
   .how-card .noise{ z-index:3; }                              /* noise stays above the video AND the dither, below the text */
   .how-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:4; color:var(--ivory); }
   .how-card .hlabel{ text-align:center; color:var(--ivory); opacity:.8; margin-bottom:100px; }
-  .how-step{ display:flex; flex-direction:column; align-items:center; gap:30px; color:var(--ivory); }
+  .how-step{ display:flex; flex-direction:column; align-items:center; gap:10px; color:var(--ivory); }
   .how-num{ display:flex; align-items:baseline; justify-content:center; gap:.12em; font-family:var(--serif); font-size:var(--fs-display); line-height:.72; }
   .how-num .num{ min-width:.35em; text-align:center; }
   .how-num .hbrk{ height:.7em; width:auto; }
@@ -211,7 +211,7 @@
   .know-spacer{ flex:1; min-height:40px; }
   .krow{ padding:14px 2px; }
   .know-active{ padding:0 2px; transition:opacity .25s; }
-  .know-rest .krow{ border-top:1px solid var(--iron); transition:opacity .25s; cursor:pointer; }
+  .know-rest .krow{ border-top:1px solid var(--iron); transition:opacity .25s; }
   .know-rest .krow:last-child{ padding-bottom:0; }
   .krow-head, .krow.simple{ display:flex; align-items:center; justify-content:space-between;
     font-family:var(--sans); font-weight:700; font-size:20px; line-height:24px; color:var(--iron); }
@@ -250,7 +250,7 @@
     font-size:var(--fs-h2); line-height:1; padding:40px 100px; border-radius:147px;
     text-decoration:none; transition:transform .3s cubic-bezier(.22,1,.36,1), background .3s; }
   .cta-btn:hover{ transform:translateY(-3px); background:#d95c34; }
-  .cta-sub{ margin-top:24px; font-size:14px; line-height:20px; color:var(--ivory); opacity:.9; }
+  .cta-sub{ margin-top:34px; font-size:14px; line-height:20px; color:var(--ivory); opacity:.9; }
 
   /* FOOTER — the gradient simply ends; bracketed tagline centred on screen */
   .foot{ position:relative; background:transparent; color:var(--ivory); min-height:100vh;
@@ -265,6 +265,7 @@
   @media(max-width:820px){ .foot .brk{ display:none; } }
   .foot .links{ margin-top:64px; display:flex; flex-direction:column; gap:10px; align-items:center; }
   .foot .links a{ color:var(--ivory); text-decoration:none; font-weight:700; font-size:8px; line-height:10px; letter-spacing:1.6px; text-transform:uppercase; }
+  .foot .links a[href^="mailto"], .foot .links a[href^="mailto"] .tr-stack > span{ text-decoration:underline; text-underline-offset:2px; }
 </style>
 </head>
 <body>
@@ -276,13 +277,11 @@
 
   <canvas id="cursor"></canvas>
 
-  <img id="src-last" src="assets/frame_last.jpg" hidden alt="">
-
   <section class="hero-scroll">
     <div class="hero-sticky" id="sticky">
       <div class="backdrop"></div>
-      <video id="hero-video" muted playsinline preload="auto" poster="assets/frame_first.jpg">
-        <source src="assets/river_scrub.mp4" type="video/mp4">
+      <video id="hero-video" autoplay loop muted playsinline preload="auto" poster="assets/frame_first.jpg">
+        <source src="assets/videos/Ironbridge_Seedance%202.0_2026-07-31_12-40-39.mp4" type="video/mp4">
       </video>
       <div class="hero-vignette"></div>
       <div class="dither-layer" id="dlayer"><canvas id="dither" width="160" height="90"></canvas></div>
@@ -496,27 +495,26 @@
   function inv(p,a,b){ return clamp((p-a)/(b-a),0,1); }
 
   /* ---------- bottom-up dither (end of hero only) ---------- */
+  /* the video keeps playing untouched underneath; bone dots simply accumulate
+     over it from the bottom up until it is covered — same exit as the how card */
   var CW=300, CH=169, BIAS=1.6;
   var dither=document.getElementById('dither'), dctx=dither.getContext('2d');
-  var off=document.createElement('canvas'), octx=off.getContext('2d');
   var RND=null;
-  function setGrain(cw){ CW=cw; CH=Math.round(cw*9/16); dither.width=CW; dither.height=CH; off.width=CW; off.height=CH;
+  function setGrain(cw){ CW=cw; CH=Math.round(cw*9/16); dither.width=CW; dither.height=CH;
     RND=new Float32Array(CW*CH); for(var k=0;k<RND.length;k++) RND[k]=Math.random(); }
   setGrain(300);
-  var lastImg=document.getElementById('src-last');
-
-  // dots dissolve in random order but weighted from the bottom rows upward
-  function renderDither(img, reveal){
-    if(!img.complete || !img.naturalWidth){ dctx.clearRect(0,0,CW,CH); return; }
-    octx.drawImage(img,0,0,CW,CH);
-    var src=octx.getImageData(0,0,CW,CH).data, out=dctx.createImageData(CW,CH), o=out.data;
-    var base=reveal*(1+BIAS);
+  var lastHeroCov=-1;
+  function renderHeroDither(cov){
+    if(cov===lastHeroCov) return;
+    lastHeroCov=cov;
+    if(cov<=0){ dctx.clearRect(0,0,CW,CH); return; }
+    var out=dctx.createImageData(CW,CH), o=out.data;
+    var base=cov*(1+BIAS);
     for(var y=0;y<CH;y++){
-      var thresh = base - BIAS*((y+0.5)/CH);
+      var thresh = base - BIAS*(1-(y+0.5)/CH);   // bottom rows cover first
       for(var x=0;x<CW;x++){
         var px=y*CW+x, i=px*4;
-        if(RND[px]<thresh){ o[i]=src[i]; o[i+1]=src[i+1]; o[i+2]=src[i+2]; o[i+3]=255; }
-        else { o[i+3]=0; }
+        if(RND[px]<thresh){ o[i]=250; o[i+1]=247; o[i+2]=230; o[i+3]=255; }
       }
     }
     dctx.putImageData(out,0,0);
@@ -534,7 +532,7 @@
   // nav anchors: About -> the statement, The Department -> galvanise, The Knowledge -> the knowledge section
   (function(){
     var targets={
-      about: function(){ return heroScroll.offsetHeight - innerHeight; },
+      about: function(){ return stmtDoneY(); },   // land with "Frontier AI is moving…" fully risen
       department: function(){ return elTop(galvHead) - 40; },
       knowledge: function(){ return elTop(document.getElementById('knowRun')); }
     };
@@ -551,11 +549,9 @@
   var strap=document.getElementById('strap');
   var forge=document.querySelector('.forge');
 
-  /* hero timing: video visible from the start, scrubs 0..S1; the dither fully lands on bone
-     by p=0.86, before the content sheet overlaps at ~0.89 — no visible bone edge over the dither */
-  var S1=0.70, DO=0.76, DEND=0.86;
-  var duration=10, targetTime=0;
-  video.addEventListener('loadedmetadata', function(){ duration=video.duration||10; try{ video.currentTime=0; }catch(e){} });
+  /* hero timing: the video just plays; the bone dither covers it from p=S1 and fully
+     lands by p=0.86, before the content sheet overlaps at ~0.89 — no visible bone edge */
+  var S1=0.70, DEND=0.86;
   function heroProgress(){ var h=heroScroll.offsetHeight-window.innerHeight; return clamp(window.scrollY/h,0,1); }
 
   function logoTransform(t){
@@ -618,8 +614,10 @@
   function pow3out(x){ return 1-Math.pow(1-x,3); }
   function stmtTarget(){
     var top=elTop(stmtRun), h=stmtRun.offsetHeight - innerHeight;
-    return clamp((window.scrollY - top)/(h*0.62), 0, 1);       // starts the moment the stage pins, completes early — no drift
+    var start=top - innerHeight*0.45;                          // words begin rising while the statement is still entering the viewport
+    return clamp((window.scrollY - start)/(top + h*0.62 - start), 0, 1);  // completes early — no drift
   }
+  function stmtDoneY(){ return Math.ceil(elTop(stmtRun) + (stmtRun.offsetHeight - innerHeight)*0.62); }
   if(REDUCE){ stmtInners.forEach(function(s){ s.style.transform='translateY(0%)'; }); }
 
   /* ---------- logos: scroll-scrubbed travel, first -> last ---------- */
@@ -697,11 +695,9 @@
       d.textContent=n; namesRoll.appendChild(d);
     });
     // densifying groups: [lines, names per line, font px, opacity] — growing runs of 2s, 3s, 4s…
-    // then a widening curve of ever-longer rows funnelling into the wall, fading as they go
     var GROUPS=[
       [3,2,96,1],[5,2,80,1],[6,3,64,1],[7,4,48,1],[8,5,36,1],
-      [9,6,28,.9],[10,7,21,.8],
-      [3,8,17,.7],[3,9,16,.6],[3,10,16,.5],[3,11,15,.45],[3,12,15,.4],[3,13,14,.35],[3,14,14,.32]
+      [9,6,28,.9],[10,7,21,.8]
     ];
     GROUPS.forEach(function(gr){
       for(var li=0; li<gr[0]; li++){
@@ -711,12 +707,47 @@
         namesRoll.appendChild(d);
       }
     });
-    nwall=document.createElement('div'); nwall.className='nwall';
-    nwall.textContent=take(1400).join(' ');
-    namesRoll.appendChild(nwall);
+    /* the funnel into the wall: rows built to measured pixel widths so every row is
+       strictly wider than the one above, growing until it meets the wall's width;
+       they share the wall's line spacing. Rebuilt once Charger has loaded. */
+    var piTail=pi, funnelRows=[];
+    var meas=document.createElement('canvas').getContext('2d');
+    function buildTail(){
+      funnelRows.forEach(function(d){ d.remove(); }); funnelRows=[];
+      if(nwall) nwall.remove();
+      var p2=piTail;
+      function take2(n){ var out=[]; for(var i=0;i<n;i++){ out.push(POOL[p2%POOL.length]); p2++; } return out; }
+      var W=Math.min(1389, innerWidth*0.96);
+      var prevW=0, rows=namesRoll.querySelectorAll('.nrow');
+      for(var ri=Math.max(0,rows.length-10); ri<rows.length; ri++){       // widest row of the last group sets the floor
+        meas.font=rows[ri].style.fontSize+" 'Charger','Arial Narrow',serif";
+        prevW=Math.max(prevW, meas.measureText(rows[ri].textContent).width);
+      }
+      var W0=prevW+16, N=24;
+      for(var r=0;r<N;r++){
+        var t=r/(N-1);
+        var fs=Math.round(17-3*t);
+        var target=Math.max(lerp(W0,W,t), prevW+14);
+        meas.font=fs+"px 'Charger','Arial Narrow',serif";
+        var line='';
+        while(meas.measureText(line).width < target && line.length<3000){
+          line += (line?' ':'') + POOL[p2%POOL.length]; p2++;
+        }
+        prevW=meas.measureText(line).width;
+        var d=document.createElement('div'); d.className='nrow';
+        d.style.cssText='font-size:'+fs+'px;line-height:normal;color:#faf7e6;white-space:pre;opacity:'+(0.7-0.38*t).toFixed(2)+';';
+        d.textContent=line;
+        namesRoll.appendChild(d); funnelRows.push(d);
+      }
+      nwall=document.createElement('div'); nwall.className='nwall';
+      nwall.textContent=take2(1400).join(' ');
+      namesRoll.appendChild(nwall);
+    }
+    buildTail();
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(buildTail);
   })();
 
-  /* ---------- meet the knowledge: hover swaps the active stage ---------- */
+  /* ---------- meet the knowledge: scroll reveals the stages (not clickable) ---------- */
   // placeholder: the same body copy for every stage while the content is being written
   var KBODY='Your firm already knows how to win this moment. The problem is where that knowledge lives: scattered across systems, documents and inboxes, and in your best people’s heads.';
   var KITEMS=[
@@ -725,7 +756,7 @@
     ['Model agnostic.',KBODY],
     ['The five verbs.',KBODY]
   ];
-  var kAct=0, kSwapping=false, kScrollIdx=0;
+  var kAct=0, kSwapping=false;
   var knowRun=document.getElementById('knowRun');
   var knowActive=document.getElementById('knowActive'), knowRest=document.getElementById('knowRest');
   var kActTitle=document.getElementById('kActTitle'), kActBody=document.getElementById('kActBody');
@@ -733,7 +764,7 @@
     if(kAct===i || kSwapping) return;
     kSwapping=true;
     if(rowEl){
-      /* the clicked block (divider + title + arrow) slides up over the old body copy,
+      /* the incoming block (divider + title + arrow) slides up over the old body copy,
          then its own body copy is revealed in place */
       var dy=knowActive.getBoundingClientRect().top - rowEl.getBoundingClientRect().top;
       rowEl.style.position='relative'; rowEl.style.zIndex='3'; rowEl.style.background='transparent';
@@ -751,14 +782,13 @@
     knowRest.innerHTML='';
     KITEMS.forEach(function(it,i){
       if(i===kAct) return;
-      var d=document.createElement('div'); d.className='krow simple';
+      var d=document.createElement('div'); d.className='krow simple'; d.setAttribute('data-ki', i);
       var s=document.createElement('span'); s.textContent=it[0];
       var a=document.createElement('span'); a.className='arw';
       var im=document.createElement('img'); im.src='assets/svg/arrow_dark.svg'; im.alt='';
       a.appendChild(im); d.appendChild(s); d.appendChild(a);
-      d.addEventListener('click', function(){ setKnowStage(i, d); });   // click slides the block up; scroll scrubs
       knowRest.appendChild(d);
-      if(typeof rollify==='function') rollify(s, d);                    // stage titles roll on hover too
+      if(typeof rollify==='function') rollify(s, d);                    // stage titles still roll on hover
     });
   }
   renderKnow();
@@ -774,19 +804,14 @@
   }
 
   /* ---------- master frame loop ---------- */
-  var seeking=false, lastTs=performance.now();
+  var lastTs=performance.now();
   function frame(ts){
     var dt=Math.min(0.1,(ts-lastTs)/1000); lastTs=ts;
     var vh=innerHeight, sy=window.scrollY;
     var p=heroProgress();
 
-    /* hero: video from the start; bottom-up dither-out at the end */
-    var dop = p<S1 ? 0 : p<DO ? inv(p,S1,DO) : 1;
-    dlayer.style.opacity=dop;
-    if(p>=S1) renderDither(lastImg, p<DO ? 1 : 1-inv(p,DO,DEND));
-    targetTime = inv(p,0.02,S1)*duration;
-    if(video.readyState>=1 && !seeking && isFinite(targetTime) && Math.abs(video.currentTime-targetTime)>0.01){
-      seeking=true; try{ video.currentTime=targetTime; }catch(e){} }
+    /* hero: the video plays untouched; bone dots accumulate over it bottom-up at the end */
+    renderHeroDither(inv(p,S1,DEND));
 
     mover.style.transform = logoTransform(inv(p,0.06,0.30));
 
@@ -889,10 +914,13 @@
     if(ghx>0){ galvHead.style.transform='translateY('+(-ghx*90)+'px)'; galvHead.style.opacity=1-ghx; }
     else { galvHead.style.removeProperty('transform'); galvHead.style.removeProperty('opacity'); }
 
-    /* meet the knowledge: scroll scrubs the four stages while the section holds */
+    /* meet the knowledge: scroll scrubs the four stages while the section holds;
+       each incoming stage slides its block up over the old body copy */
     var kp=clamp((sy-elTop(knowRun))/(knowRun.offsetHeight-vh),0,1);
     var ki=Math.min(3, Math.floor(kp*4));
-    if(ki!==kScrollIdx){ kScrollIdx=ki; setKnowStage(ki); }
+    if(ki!==kAct && !kSwapping){
+      setKnowStage(ki, knowRest.querySelector('.krow[data-ki="'+ki+'"]'));
+    }
 
     /* the department: roll the names into the wall, accelerating as they multiply */
     var nrp=clamp((sy-elTop(namesRun))/(namesRun.offsetHeight-vh),0,1);
@@ -913,8 +941,6 @@
 
     requestAnimationFrame(frame);
   }
-  video.addEventListener('seeked', function(){ seeking=false; });
-  video.addEventListener('error', function(){ seeking=false; });
   addEventListener('resize', function(){ rowH=0; });
   requestAnimationFrame(frame);
 
@@ -942,7 +968,7 @@
     requestAnimationFrame(cursorFrame); }
   requestAnimationFrame(cursorFrame);
 
-  /* ---------- footer dithered wave (WebGL2, bone @10%, 10% speed) ---------- */
+  /* ---------- footer dithered wave (WebGL2, iron @10%, 10% speed) ---------- */
   (function(){
     var cv=document.createElement('canvas'); cv.className='foot-wave'; cv.setAttribute('aria-hidden','true');
     footEl.insertBefore(cv, footEl.firstChild);
@@ -982,7 +1008,7 @@
     var aPos=gl.getAttribLocation(prog,'a_pos'); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
     function u(n){ return gl.getUniformLocation(prog,n); }
     var uRes=u('u_resolution'), uTime=u('u_time'), uPtr=u('u_pointer'), uRip=u('u_ripple'), uPx=u('u_pxSize');
-    gl.uniform3fv(u('u_fg'), new Float32Array([250/255,247/255,230/255]));   // bone
+    gl.uniform3fv(u('u_fg'), new Float32Array([8/255,17/255,27/255]));       // brand iron #08111B
     gl.uniform1f(u('u_alpha'), 0.10);                                        // 10% transparency
     var dpr=1, CELL=3;
     function resize(){ dpr=Math.min(window.devicePixelRatio||1,2);
@@ -1027,6 +1053,7 @@
     m.style.height=a.offsetHeight+'px';
   }
   document.querySelectorAll('.nav .nitem, .nav .ncta, .foot .links a, .cta-btn, .alfred .logbtn').forEach(function(el){ rollify(el); });
+  document.querySelectorAll('.sec .sitem').forEach(function(it){ rollify(it.querySelector('.txt'), it); });   // not clickable, but they roll all the same
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){
     document.querySelectorAll('.tr-roll').forEach(function(m){ var a=m.querySelector('.tr-stack > span'); if(a) m.style.height=a.offsetHeight+'px'; });
   });
