@@ -498,11 +498,17 @@
      over it from the bottom up until it is covered — same exit as the how card */
   var CW=300, CH=169, BIAS=1.6;
   var dither=document.getElementById('dither'), dctx=dither.getContext('2d');
-  var RND=null;
-  function setGrain(cw){ CW=cw; CH=Math.round(cw*9/16); dither.width=CW; dither.height=CH;
-    RND=new Float32Array(CW*CH); for(var k=0;k<RND.length;k++) RND[k]=Math.random(); }
-  setGrain(300);
-  var lastHeroCov=-1;
+  var howDither=document.getElementById('howDither'), hdctx=howDither.getContext('2d');
+  var RND=null, lastHeroCov=-1;
+  /* grain matched to the footer wave: one dither dot = one 3px cell */
+  function setGrain(){
+    CW=Math.max(2, Math.ceil(innerWidth/3)); CH=Math.max(2, Math.ceil(innerHeight/3));
+    dither.width=CW; dither.height=CH; howDither.width=CW; howDither.height=CH;
+    RND=new Float32Array(CW*CH); for(var k=0;k<RND.length;k++) RND[k]=Math.random();
+    lastHeroCov=-1; lastHowCov=-1;
+  }
+  setGrain();
+  addEventListener('resize', setGrain);
   function renderHeroDither(cov){
     if(cov===lastHeroCov) return;
     lastHeroCov=cov;
@@ -644,20 +650,19 @@
   var howStep=document.getElementById('howStep'), howBody=document.getElementById('howBody');
   /* the card leaves through the same bottom-up dither as the hero: dots of the
      background gradient accumulate from the bottom until the card is covered */
-  var howDither=document.getElementById('howDither'), hdctx=howDither.getContext('2d');
   var howCenterEl=document.querySelector('.how-center');
-  var HDW=300, HDH=169, lastHowCov=-1;
+  var lastHowCov=-1;
   function renderHowDither(cov){
     if(cov===lastHowCov && cov<=0) return;
     lastHowCov=cov;
-    if(cov<=0){ hdctx.clearRect(0,0,HDW,HDH); return; }
+    if(cov<=0){ hdctx.clearRect(0,0,CW,CH); return; }
     var f=(window.scrollY + innerHeight*0.5 - elTop(forge))/forge.offsetHeight;
-    var c=forgeColor(f), out=hdctx.createImageData(HDW,HDH), o=out.data;
+    var c=forgeColor(f), out=hdctx.createImageData(CW,CH), o=out.data;
     var base=cov*(1+BIAS);
-    for(var y=0;y<HDH;y++){
-      var thresh=base - BIAS*(1-(y+0.5)/HDH);   // bottom rows cover first
-      for(var x=0;x<HDW;x++){
-        var px=y*HDW+x, i4=px*4;
+    for(var y=0;y<CH;y++){
+      var thresh=base - BIAS*(1-(y+0.5)/CH);    // bottom rows cover first
+      for(var x=0;x<CW;x++){
+        var px=y*CW+x, i4=px*4;
         if(RND[px]<thresh){ o[i4]=c[0]; o[i4+1]=c[1]; o[i4+2]=c[2]; o[i4+3]=255; }
       }
     }
