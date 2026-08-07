@@ -754,9 +754,10 @@
         d.style.cssText='font-size:'+fs+'px;line-height:normal;color:#faf7e6;white-space:pre;opacity:'+op+';';
         d.textContent=line; namesRoll.appendChild(d); funnelRows.push(d);
       }
-      function trimToW(line, fs){
+      function trimToW(line, fs, cap){
+        cap=cap||W;
         meas.font=fs+"px 'Charger','Arial Narrow',serif";
-        while(meas.measureText(line).width>W && line.indexOf(' ')>-1) line=line.slice(0, line.lastIndexOf(' '));
+        while(meas.measureText(line).width>cap && line.indexOf(' ')>-1) line=line.slice(0, line.lastIndexOf(' '));
         return line;
       }
       function lineTo(target, fs){
@@ -765,13 +766,14 @@
         while(meas.measureText(line).width<target && line.length<3000){ line+=(line?' ':'')+POOL[p2%POOL.length]; p2++; }
         return trimToW(line, fs);
       }
-      var DRIFT=[1,2,0,1,-1,2,1,1,0,2,-1,1,2,1,0,2,1,-1,2,1];  // 9,10,12,12,13,12,14… organic widening
+      var DRIFT=[1,0,1,-1,1,1,0,1,0,1,-1,1,0,1,1,0,1,-1,1,1];  // gentle drift: twice the rows on the way to the wall
+      var JIT=[0.97,0.925,0.955,0.90,0.945,0.965,0.915,0.95];  // per-row width cap so the edges wander, never flush
       var count=9, width=0, r=0;
-      while(r<40){
+      while(r<80){
         var prog=Math.min(1, width/W);
         var fs=Math.round(17-3*prog);
         meas.font=fs+"px 'Charger','Arial Narrow',serif";
-        var line=trimToW(take2(count).join(' '), fs);
+        var line=trimToW(take2(count).join(' '), fs, W*JIT[r%JIT.length]);
         width=meas.measureText(line).width;
         addRow(line, fs, (0.7-0.38*prog).toFixed(2));
         if(width>=W*0.88) break;
@@ -780,8 +782,8 @@
       }
       /* landing: three 14px rows easing down to the wall's transparency, then one
          full-width 14px row at the wall's own opacity — a seamless seam into it */
-      var LANDOP=[0.35,0.33,0.31], landLine='';
-      for(var li=0; li<3; li++){ count++; landLine=trimToW(take2(count).join(' '), 14); addRow(landLine, 14, LANDOP[li]); }
+      var LANDOP=[0.35,0.33,0.31], LANDW=[0.94,0.965,0.925], landLine='';
+      for(var li=0; li<3; li++){ count++; landLine=trimToW(take2(count).join(' '), 14, W*LANDW[li]); addRow(landLine, 14, LANDOP[li]); }
       meas.font="14px 'Charger','Arial Narrow',serif";
       addRow(lineTo((meas.measureText(landLine).width+W*0.97)/2, 14), 14, 0.3);  // bridges the last easing row and the seam row
       addRow(lineTo(W*0.97, 14), 14, 0.3);
