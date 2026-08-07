@@ -178,7 +178,7 @@
   .names-headin{ position:absolute; left:0; right:0; text-align:center; z-index:2;
     top:140px; will-change:transform,opacity; }                /* same lock as the galvanise heading: 70px under the nav */
   .names-headin h2{ color:var(--iron); }
-  .names-run{ position:relative; height:560vh; }
+  .names-run{ position:relative; height:640vh; }
   .names-stick{ position:sticky; top:0; height:100vh; overflow:hidden; }
   .names-roll{ position:absolute; left:0; right:0; top:0; text-align:center; will-change:transform; }
   .names-roll .nrow{ font-family:var(--serif); white-space:nowrap; }
@@ -283,8 +283,8 @@
   <section class="hero-scroll">
     <div class="hero-sticky" id="sticky">
       <div class="backdrop"></div>
-      <video id="hero-video" autoplay loop muted playsinline preload="auto" poster="assets/frame_first.jpg">
-        <source src="assets/videos/Ironbridge_Seedance%202.0_2026-07-31_12-40-39.mp4" type="video/mp4">
+      <video id="hero-video" muted playsinline preload="auto" poster="assets/frame_first.jpg">
+        <source src="assets/river_scrub.mp4" type="video/mp4">
       </video>
       <div class="hero-vignette"></div>
       <div class="dither-layer" id="dlayer"><canvas id="dither" width="160" height="90"></canvas></div>
@@ -547,9 +547,13 @@
   var strap=document.getElementById('strap');
   var forge=document.querySelector('.forge');
 
-  /* hero timing: the video just plays; the bone dither covers it from p=S1 and fully
-     lands by p=0.86, before the content sheet overlaps at ~0.89 — no visible bone edge */
+  /* hero timing: the video scrubs 0..S1; the bone dither then covers the live frame
+     bottom-up and fully lands by p=0.86, before the content sheet overlaps at ~0.89 */
   var S1=0.70, DEND=0.86;
+  var duration=10, targetTime=0, seeking=false;
+  video.addEventListener('loadedmetadata', function(){ duration=video.duration||10; try{ video.currentTime=0; }catch(e){} });
+  video.addEventListener('seeked', function(){ seeking=false; });
+  video.addEventListener('error', function(){ seeking=false; });
   function heroProgress(){ var h=heroScroll.offsetHeight-window.innerHeight; return clamp(window.scrollY/h,0,1); }
 
   function logoTransform(t){
@@ -612,10 +616,9 @@
   function pow3out(x){ return 1-Math.pow(1-x,3); }
   function stmtTarget(){
     var top=elTop(stmtRun), h=stmtRun.offsetHeight - innerHeight;
-    var start=top - innerHeight*0.45;                          // words begin rising while the statement is still entering the viewport
-    return clamp((window.scrollY - start)/(top + h*0.62 - start), 0, 1);  // completes early — no drift
+    return clamp((window.scrollY - top)/(h*0.5), 0, 1);        // words pop only once the stage is locked; completes early
   }
-  function stmtDoneY(){ return Math.ceil(elTop(stmtRun) + (stmtRun.offsetHeight - innerHeight)*0.62); }
+  function stmtDoneY(){ return Math.ceil(elTop(stmtRun) + (stmtRun.offsetHeight - innerHeight)*0.5); }
   if(REDUCE){ stmtInners.forEach(function(s){ s.style.transform='translateY(0%)'; }); }
 
   /* ---------- logos: scroll-scrubbed travel, first -> last ---------- */
@@ -705,9 +708,9 @@
         namesRoll.appendChild(d);
       }
     });
-    /* the funnel into the wall: rows built to measured pixel widths so every row is
-       strictly wider than the one above, growing until it meets the wall's width;
-       they share the wall's line spacing. Rebuilt once Charger has loaded. */
+    /* the funnel into the wall: name counts drift organically upward — mostly +1,
+       sometimes holding, occasionally dipping one — until the rows meet the wall's
+       width; they share the wall's line spacing. Rebuilt once Charger has loaded. */
     var piTail=pi, funnelRows=[];
     var meas=document.createElement('canvas').getContext('2d');
     function buildTail(){
@@ -716,29 +719,27 @@
       var p2=piTail;
       function take2(n){ var out=[]; for(var i=0;i<n;i++){ out.push(POOL[p2%POOL.length]); p2++; } return out; }
       var W=Math.min(1389, innerWidth*0.96);
-      var prevW=0, rows=namesRoll.querySelectorAll('.nrow');
-      for(var ri=Math.max(0,rows.length-10); ri<rows.length; ri++){       // widest row of the last group sets the floor
-        meas.font=rows[ri].style.fontSize+" 'Charger','Arial Narrow',serif";
-        prevW=Math.max(prevW, meas.measureText(rows[ri].textContent).width);
-      }
-      var W0=prevW+16, N=24;
-      for(var r=0;r<N;r++){
-        var t=r/(N-1);
-        var fs=Math.round(17-3*t);
-        var target=Math.max(lerp(W0,W,t), prevW+14);
+      var DRIFT=[1,2,0,1,-1,2,1,1,0,2,-1,1,2,1,0,2,1,-1,2,1];  // 9,10,12,12,13,12,14… organic widening
+      var count=9, width=0, r=0;
+      while(r<40){
+        var prog=Math.min(1, width/W);
+        var fs=Math.round(17-3*prog);
         meas.font=fs+"px 'Charger','Arial Narrow',serif";
-        var line='';
-        while(meas.measureText(line).width < target && line.length<3000){
-          line += (line?' ':'') + POOL[p2%POOL.length]; p2++;
+        var line=take2(count).join(' ');
+        width=meas.measureText(line).width;
+        while(width>W && line.indexOf(' ')>-1){                // never wider than the wall itself
+          line=line.slice(0, line.lastIndexOf(' ')); width=meas.measureText(line).width;
         }
-        prevW=meas.measureText(line).width;
         var d=document.createElement('div'); d.className='nrow';
-        d.style.cssText='font-size:'+fs+'px;line-height:normal;color:#faf7e6;white-space:pre;opacity:'+(0.7-0.38*t).toFixed(2)+';';
+        d.style.cssText='font-size:'+fs+'px;line-height:normal;color:#faf7e6;white-space:pre;opacity:'+(0.7-0.38*prog).toFixed(2)+';';
         d.textContent=line;
         namesRoll.appendChild(d); funnelRows.push(d);
+        if(width>=W*0.97) break;
+        count+=DRIFT[r%DRIFT.length]; if(count<2) count=2;
+        r++;
       }
       nwall=document.createElement('div'); nwall.className='nwall';
-      nwall.textContent=take2(1400).join(' ');
+      nwall.textContent=take2(2800).join(' ');                 // the full run of names, doubled — scrolled through in place
       namesRoll.appendChild(nwall);
     }
     buildTail();
@@ -823,8 +824,12 @@
     var vh=innerHeight, sy=window.scrollY;
     var p=heroProgress();
 
-    /* hero: the video plays untouched; bone dots accumulate over it bottom-up at the end */
+    /* hero: the video scrubs with the scroll; bone dots accumulate over the live
+       frame bottom-up at the end — the footage itself is never pixelated */
     renderHeroDither(inv(p,S1,DEND));
+    targetTime = inv(p,0.02,S1)*duration;
+    if(video.readyState>=1 && !seeking && isFinite(targetTime) && Math.abs(video.currentTime-targetTime)>0.01){
+      seeking=true; try{ video.currentTime=targetTime; }catch(e){} }
 
     mover.style.transform = logoTransform(inv(p,0.06,0.30));
 
@@ -932,16 +937,27 @@
     var ki=Math.min(3, Math.floor(kp*4));
     if(ki!==kAct && !kSwapping) setKnowStage(ki);
 
-    /* the department: roll the names into the wall, accelerating as they multiply */
+    /* the department: two phases — the roll accelerates into the wall, then the doubled
+       wall streams slowly past the locked brackets and closing headline */
     var nrp=clamp((sy-elTop(namesRun))/(namesRun.offsetHeight-vh),0,1);
-    var nre=nrp*(0.55+0.45*nrp);                              // scroll speeds up towards the wall
     var first=namesRoll.firstElementChild;
     if(first && nwall){
+      var NP1=0.78;                                           // phase split: roll-in / wall crawl
       var startC=first.offsetTop+first.offsetHeight/2;
-      var endC=nwall.offsetTop+Math.min(nwall.offsetHeight, vh*0.84)/2;
-      var cC=lerp(startC,endC,nre);
+      var wallInC=nwall.offsetTop+vh*0.42;                    // the wall has just filled the screen
+      var endC=nwall.offsetTop+nwall.offsetHeight-vh*0.5;     // …and still fills it when the crawl ends
+      var cC;
+      if(nrp<NP1){ var t1=nrp/NP1; t1=t1*(0.55+0.45*t1); cC=lerp(startC,wallInC,t1); }
+      else cC=lerp(wallInC,endC,(nrp-NP1)/(1-NP1));
       namesRoll.style.transform='translateY('+(vh/2-cC)+'px)';
-      namesFinal.style.opacity=inv(nrp,0.88,0.97);            // closing headline once the wall has landed
+      /* closing headline: fades in once the wall fills the screen, then holds locked with
+         the brackets while the names stream past; at the very end both simply fade out
+         in place — nothing scrolls up */
+      var nFadeIn=inv(nrp,0.79,0.86);
+      var nFadeOut=1-inv(nrp,0.93,0.985);
+      namesFinal.style.opacity=nFadeIn*nFadeOut;
+      if(nFadeOut<1) namesBrk.style.opacity=nFadeOut;
+      else namesBrk.style.removeProperty('opacity');
       /* heading leaves as Alfred hands over to the next name — same rise-and-fade as galvanise */
       var rowPitch=namesRoll.children.length>1 ? (namesRoll.children[1].offsetTop-first.offsetTop) : 120;
       var nhx=clamp((cC-startC)/rowPitch,0,1);
@@ -1019,7 +1035,7 @@
     function u(n){ return gl.getUniformLocation(prog,n); }
     var uRes=u('u_resolution'), uTime=u('u_time'), uPtr=u('u_pointer'), uRip=u('u_ripple'), uPx=u('u_pxSize');
     gl.uniform3fv(u('u_fg'), new Float32Array([8/255,17/255,27/255]));       // brand iron #08111B
-    gl.uniform1f(u('u_alpha'), 0.10);                                        // 10% transparency
+    gl.uniform1f(u('u_alpha'), 0.55);                                        // 50% less transparent than the 10% original
     var dpr=1, CELL=3;
     function resize(){ dpr=Math.min(window.devicePixelRatio||1,2);
       var w=Math.max(1,Math.round(cv.clientWidth*dpr)), h=Math.max(1,Math.round(cv.clientHeight*dpr));
