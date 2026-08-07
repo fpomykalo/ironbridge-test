@@ -531,7 +531,7 @@
   (function(){
     var targets={
       about: function(){ return stmtDoneY(); },   // land with "Frontier AI is moving…" fully risen
-      department: function(){ return elTop(galvHead) - 40; },
+      department: function(){ return elTop(galvRun); },   // the locked opening state of galvanise
       knowledge: function(){ return elTop(document.getElementById('knowRun')); }
     };
     Object.keys(navItems).forEach(function(k){
@@ -719,28 +719,46 @@
       var p2=piTail;
       function take2(n){ var out=[]; for(var i=0;i<n;i++){ out.push(POOL[p2%POOL.length]); p2++; } return out; }
       var W=Math.min(1389, innerWidth*0.96);
+      function addRow(line, fs, op){
+        var d=document.createElement('div'); d.className='nrow';
+        d.style.cssText='font-size:'+fs+'px;line-height:normal;color:#faf7e6;white-space:pre;opacity:'+op+';';
+        d.textContent=line; namesRoll.appendChild(d); funnelRows.push(d);
+      }
+      function trimToW(line, fs){
+        meas.font=fs+"px 'Charger','Arial Narrow',serif";
+        while(meas.measureText(line).width>W && line.indexOf(' ')>-1) line=line.slice(0, line.lastIndexOf(' '));
+        return line;
+      }
+      function lineTo(target, fs){
+        meas.font=fs+"px 'Charger','Arial Narrow',serif";
+        var line='';
+        while(meas.measureText(line).width<target && line.length<3000){ line+=(line?' ':'')+POOL[p2%POOL.length]; p2++; }
+        return trimToW(line, fs);
+      }
       var DRIFT=[1,2,0,1,-1,2,1,1,0,2,-1,1,2,1,0,2,1,-1,2,1];  // 9,10,12,12,13,12,14… organic widening
       var count=9, width=0, r=0;
       while(r<40){
         var prog=Math.min(1, width/W);
         var fs=Math.round(17-3*prog);
         meas.font=fs+"px 'Charger','Arial Narrow',serif";
-        var line=take2(count).join(' ');
+        var line=trimToW(take2(count).join(' '), fs);
         width=meas.measureText(line).width;
-        while(width>W && line.indexOf(' ')>-1){                // never wider than the wall itself
-          line=line.slice(0, line.lastIndexOf(' ')); width=meas.measureText(line).width;
-        }
-        var d=document.createElement('div'); d.className='nrow';
-        d.style.cssText='font-size:'+fs+'px;line-height:normal;color:#faf7e6;white-space:pre;opacity:'+(0.7-0.38*prog).toFixed(2)+';';
-        d.textContent=line;
-        namesRoll.appendChild(d); funnelRows.push(d);
-        if(width>=W*0.97) break;
+        addRow(line, fs, (0.7-0.38*prog).toFixed(2));
+        if(width>=W*0.88) break;
         count+=DRIFT[r%DRIFT.length]; if(count<2) count=2;
         r++;
       }
+      /* landing: three 14px rows easing down to the wall's transparency, then one
+         full-width 14px row at the wall's own opacity — a seamless seam into it */
+      var LANDOP=[0.35,0.33,0.31];
+      for(var li=0; li<3; li++){ count++; addRow(trimToW(take2(count).join(' '), 14), 14, LANDOP[li]); }
+      addRow(lineTo(W*0.97, 14), 14, 0.3);
       nwall=document.createElement('div'); nwall.className='nwall';
-      nwall.textContent=take2(2800).join(' ');                 // the full run of names, doubled — scrolled through in place
+      nwall.textContent=take2(2600).join(' ');                 // the full run of names, doubled — scrolled through in place
       namesRoll.appendChild(nwall);
+      /* the very end of the wall: every three rows another tenth of opacity is gone,
+         until the names dissolve to nothing */
+      [0.2,0.2,0.2,0.1,0.1,0.1].forEach(function(op){ addRow(lineTo(W*0.97, 14), 14, op); });
     }
     buildTail();
     if(document.fonts && document.fonts.ready) document.fonts.ready.then(buildTail);
@@ -945,7 +963,8 @@
       var NP1=0.78;                                           // phase split: roll-in / wall crawl
       var startC=first.offsetTop+first.offsetHeight/2;
       var wallInC=nwall.offsetTop+vh*0.42;                    // the wall has just filled the screen
-      var endC=nwall.offsetTop+nwall.offsetHeight-vh*0.5;     // …and still fills it when the crawl ends
+      var lastRow=namesRoll.lastElementChild;
+      var endC=lastRow.offsetTop+lastRow.offsetHeight-vh*0.5; // the fading tail rows close the crawl
       var cC;
       if(nrp<NP1){ var t1=nrp/NP1; t1=t1*(0.55+0.45*t1); cC=lerp(startC,wallInC,t1); }
       else cC=lerp(wallInC,endC,(nrp-NP1)/(1-NP1));
