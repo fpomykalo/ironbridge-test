@@ -207,17 +207,20 @@
   @media(max-width:900px){ .know-grid{ grid-template-columns:1fr; gap:40px; } }
   .know-col .cap{ border-top:1px solid var(--iron); padding-top:10px; margin-bottom:26px; }   /* Figma: label sits 10px BELOW the divider */
   .know-col .cap span{ color:var(--iron); }
+  /* stage accordion: passed stages stack at the top, the active stage opens its body
+     below its own title, upcoming stages wait as rows pinned to the bottom */
   .know-left{ display:flex; flex-direction:column; }
-  .know-spacer{ flex:1; min-height:40px; }
-  .krow{ padding:14px 2px; }
-  .know-active{ padding:0 2px; transition:opacity .25s; }
-  .know-rest .krow{ border-top:1px solid var(--iron); transition:opacity .25s; }
-  .know-rest .krow:last-child{ padding-bottom:0; }
-  .krow-head, .krow.simple{ display:flex; align-items:center; justify-content:space-between;
+  .klist{ display:flex; flex-direction:column; flex:1; }
+  .kspacer{ flex:1; min-height:0; }
+  .kblock{ border-top:1px solid var(--iron); padding:14px 2px; will-change:transform; }
+  .klist .kblock:last-of-type{ padding-bottom:0; }
+  .krow-head{ display:flex; align-items:center; justify-content:space-between;
     font-family:var(--sans); font-weight:700; font-size:20px; line-height:24px; color:var(--iron); }
-  .krow .arw, .krow-head .arw{ display:flex; align-items:center; }
-  .krow .arw img, .krow-head .arw img{ width:13px; height:13px; display:block; }
-  .krow-body{ margin-top:14px; font-size:14px; line-height:20px; color:var(--iron); max-width:44ch; }
+  .krow-head .arw{ display:flex; align-items:center; }
+  .krow-head .arw img{ width:13px; height:13px; display:block; }
+  .kblock .krow-body{ display:none; }
+  .kblock.on .krow-body{ display:block; }
+  .krow-body{ margin-top:14px; font-size:14px; line-height:20px; color:var(--iron); max-width:44ch; white-space:pre-line; }
   .know-media{ position:relative; border-radius:8px; overflow:hidden; background:#0c1622; aspect-ratio:740/416; }
   .know-media img, .know-media video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .know-media .noise{ z-index:1; }
@@ -407,12 +410,7 @@
         <div class="know-grid">
           <div class="know-col know-left reveal">
             <div class="cap"><span class="eyebrow">stages</span></div>
-            <div class="know-active" id="knowActive">
-              <div class="krow-head"><span id="kActTitle">Your firm already knows.</span><span class="arw"><img src="assets/svg/arrow_dark.svg" alt=""></span></div>
-              <p class="krow-body" id="kActBody">Your firm already knows how to win this moment. The problem is where that knowledge lives: scattered across systems, documents and inboxes, and in your best people&#39;s heads.</p>
-            </div>
-            <div class="know-spacer"></div>
-            <div class="know-rest" id="knowRest"></div>
+            <div class="klist" id="kList"></div>
           </div>
           <div class="know-col know-right reveal">
             <div class="cap"><span class="eyebrow">knowledge</span></div>
@@ -747,51 +745,66 @@
     if(document.fonts && document.fonts.ready) document.fonts.ready.then(buildTail);
   })();
 
-  /* ---------- meet the knowledge: scroll reveals the stages (not clickable) ---------- */
-  // placeholder: the same body copy for every stage while the content is being written
-  var KBODY='Your firm already knows how to win this moment. The problem is where that knowledge lives: scattered across systems, documents and inboxes, and in your best people’s heads.';
+  /* ---------- meet the knowledge: scroll reveals the stages (not clickable) ----------
+     accordion in fixed order — passed stages stack at the top, the active stage opens
+     its body under its own title, upcoming stages wait at the bottom of the column */
   var KITEMS=[
-    ['Your firm already knows.',KBODY],
-    ['A single interface.',KBODY],
-    ['Model agnostic.',KBODY],
-    ['The five verbs.',KBODY]
+    ['Your firm already knows.','Your firm already knows how to win this moment. The problem is where that knowledge lives: scattered across systems, documents and inboxes, and in your best people’s heads.'],
+    ['A single interface.','Your team works in one place, drawing on what your firm knows, with security and oversight across everything it does.'],
+    ['Model agnostic.','Own the knowledge. Rent the intelligence. We run the best model for each task and swap it when a better one arrives. You stay independent of any one provider or cloud vendor.'],
+    ['The five verbs.','Integrates with your systems.\nGets to know your work.\nBuilds a living map of your firm.\nEmpowers your every day.\nLearns over time.']
   ];
   var kAct=0, kSwapping=false;
   var knowRun=document.getElementById('knowRun');
-  var knowActive=document.getElementById('knowActive'), knowRest=document.getElementById('knowRest');
-  var kActTitle=document.getElementById('kActTitle'), kActBody=document.getElementById('kActBody');
-  function setKnowStage(i, rowEl){
+  var kList=document.getElementById('kList');
+  var kBlocks=KITEMS.map(function(it,i){
+    var b=document.createElement('div'); b.className='kblock'; b.style.order=i*2;
+    var h=document.createElement('div'); h.className='krow-head';
+    var s=document.createElement('span'); s.textContent=it[0];
+    var a=document.createElement('span'); a.className='arw';
+    var im=document.createElement('img'); im.src='assets/svg/arrow_dark.svg'; im.alt='';
+    a.appendChild(im); h.appendChild(s); h.appendChild(a);
+    var pB=document.createElement('p'); pB.className='krow-body'; pB.textContent=it[1];
+    b.appendChild(h); b.appendChild(pB);
+    kList.appendChild(b);
+    rollify(s, b);                                            // stage titles still roll on hover
+    return b;
+  });
+  var kSpacer=document.createElement('div'); kSpacer.className='kspacer';
+  kList.appendChild(kSpacer);
+  function applyKnow(){
+    kBlocks.forEach(function(b,i){ b.classList.toggle('on', i===kAct); });
+    kSpacer.style.order=kAct*2+1;                             // upcoming rows drop below the spacer
+  }
+  applyKnow();
+  function setKnowStage(i){
     if(kAct===i || kSwapping) return;
     kSwapping=true;
-    if(rowEl){
-      /* the incoming block (divider + title + arrow) slides up over the old body copy,
-         then its own body copy is revealed in place */
-      var dy=knowActive.getBoundingClientRect().top - rowEl.getBoundingClientRect().top;
-      rowEl.style.position='relative'; rowEl.style.zIndex='3'; rowEl.style.background='transparent';
-      rowEl.style.transition='transform .45s cubic-bezier(.22,1,.36,1)';
-      knowActive.style.opacity=0;
-      requestAnimationFrame(function(){ rowEl.style.transform='translateY('+dy+'px)'; });
-      setTimeout(function(){ kAct=i; renderKnow(); knowActive.style.opacity=1; kSwapping=false; }, 470);
-    } else {
-      kAct=i; knowActive.style.opacity=0;
-      setTimeout(function(){ renderKnow(); knowActive.style.opacity=1; kSwapping=false; }, 160);
-    }
-  }
-  function renderKnow(){
-    kActTitle.textContent=KITEMS[kAct][0]; kActBody.textContent=KITEMS[kAct][1];
-    knowRest.innerHTML='';
-    KITEMS.forEach(function(it,i){
-      if(i===kAct) return;
-      var d=document.createElement('div'); d.className='krow simple'; d.setAttribute('data-ki', i);
-      var s=document.createElement('span'); s.textContent=it[0];
-      var a=document.createElement('span'); a.className='arw';
-      var im=document.createElement('img'); im.src='assets/svg/arrow_dark.svg'; im.alt='';
-      a.appendChild(im); d.appendChild(s); d.appendChild(a);
-      knowRest.appendChild(d);
-      if(typeof rollify==='function') rollify(s, d);                    // stage titles still roll on hover
+    /* FLIP: every title block slides from its old position to its new one,
+       the incoming body copy fades in underneath its title */
+    var before=kBlocks.map(function(b){ return b.getBoundingClientRect().top; });
+    kAct=i; applyKnow();
+    var newBody=kBlocks[i].querySelector('.krow-body');
+    var after=kBlocks.map(function(b){ return b.getBoundingClientRect().top; });
+    kBlocks.forEach(function(b,j){
+      var dy=before[j]-after[j];
+      b.style.transition='none';
+      if(Math.abs(dy)>0.5) b.style.transform='translateY('+dy+'px)';
     });
+    newBody.style.opacity=0;
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      kBlocks.forEach(function(b){
+        b.style.transition='transform .45s cubic-bezier(.22,1,.36,1)';
+        b.style.transform='translateY(0)';
+      });
+      newBody.style.transition='opacity .4s ease .18s'; newBody.style.opacity=1;
+    });});
+    setTimeout(function(){
+      kBlocks.forEach(function(b){ b.style.removeProperty('transition'); b.style.removeProperty('transform'); });
+      newBody.style.removeProperty('transition'); newBody.style.removeProperty('opacity');
+      kSwapping=false;
+    }, 520);
   }
-  renderKnow();
 
   /* ---------- heat labels ---------- */
   function heatLabelFor(t){
@@ -914,13 +927,10 @@
     if(ghx>0){ galvHead.style.transform='translateY('+(-ghx*90)+'px)'; galvHead.style.opacity=1-ghx; }
     else { galvHead.style.removeProperty('transform'); galvHead.style.removeProperty('opacity'); }
 
-    /* meet the knowledge: scroll scrubs the four stages while the section holds;
-       each incoming stage slides its block up over the old body copy */
+    /* meet the knowledge: scroll scrubs the four stages while the section holds */
     var kp=clamp((sy-elTop(knowRun))/(knowRun.offsetHeight-vh),0,1);
     var ki=Math.min(3, Math.floor(kp*4));
-    if(ki!==kAct && !kSwapping){
-      setKnowStage(ki, knowRest.querySelector('.krow[data-ki="'+ki+'"]'));
-    }
+    if(ki!==kAct && !kSwapping) setKnowStage(ki);
 
     /* the department: roll the names into the wall, accelerating as they multiply */
     var nrp=clamp((sy-elTop(namesRun))/(namesRun.offsetHeight-vh),0,1);
