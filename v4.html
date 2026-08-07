@@ -82,7 +82,7 @@
   .hmeta b{ display:block; font-size:12px; line-height:1.25; font-weight:700; letter-spacing:.04em; }
   .hmeta span{ display:block; font-size:8px; line-height:1.4; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; opacity:.85; }
   .strap{ position:absolute; bottom:30px; right:30px; text-align:right; font-family:var(--sans); font-weight:700;
-    font-size:8px; line-height:8px; letter-spacing:1.6px; text-transform:uppercase; opacity:0; }
+    font-size:8px; line-height:10px; letter-spacing:1.6px; text-transform:uppercase; opacity:0; }
 
   /* ---------- CONTENT ---------- */
   .content{ position:relative; z-index:2; margin-top:-60vh; }
@@ -96,7 +96,7 @@
     background:url('assets/images/noise.png'); background-size:100vw 100vh; background-repeat:repeat;
     mix-blend-mode:overlay; opacity:.5; }
   .forge > *{ position:relative; z-index:1; }
-  .wrap{ max-width:1280px; margin:0 auto; padding:0 80px; }
+  .wrap{ max-width:1440px; margin:0 auto; padding:0 80px; }   /* Figma: 1280 content inside the 1440 frame */
   @media(max-width:900px){ .wrap{ padding:0 24px; } }
   .reveal{ opacity:0; transform:translateY(26px); transition:opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
   .reveal.in{ opacity:1; transform:none; }
@@ -130,21 +130,23 @@
   .how-card .bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .how-card .veil{ position:absolute; inset:0; background:linear-gradient(180deg,rgba(8,17,27,.30),rgba(8,17,27,.60)); }
   .how-card .noise{ z-index:1; }
-  .how-card .hlabel{ position:absolute; top:30px; left:0; right:0; text-align:center; color:var(--ivory); opacity:.8; z-index:2; }
-  .how-step{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--ivory); z-index:2; }
-  .how-num{ display:flex; align-items:center; justify-content:center; gap:.12em; font-family:var(--serif); font-size:var(--fs-display); line-height:1; }
+  .how-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:2; color:var(--ivory); }
+  .how-card .hlabel{ text-align:center; color:var(--ivory); opacity:.8; margin-bottom:100px; }
+  .how-step{ display:flex; flex-direction:column; align-items:center; gap:30px; color:var(--ivory); }
+  .how-num{ display:flex; align-items:baseline; justify-content:center; gap:.12em; font-family:var(--serif); font-size:var(--fs-display); line-height:.72; }
   .how-num .num{ min-width:.35em; text-align:center; }
-  .how-num .hbrk{ height:.7em; width:auto; display:flex; align-items:center; }
+  .how-num .hbrk{ height:.7em; width:auto; }
   .how-num .hbrk img{ height:100%; width:auto; display:block; }
   .how-step .word{ font-family:var(--serif); font-size:var(--fs-display); line-height:.857; }
-  .how-body{ position:absolute; left:0; right:0; bottom:30px; max-width:40ch; margin:0 auto; text-align:center;
-    font-size:14px; line-height:20px; color:var(--ivory); opacity:.92; padding:0 24px; z-index:2; }
+  .how-body{ max-width:40ch; margin:100px auto 0; text-align:center;
+    font-size:14px; line-height:20px; color:var(--ivory); opacity:.92; padding:0 24px; }
+  .how-dither{ position:absolute; inset:0; width:100%; height:100%; z-index:4; pointer-events:none; image-rendering:pixelated; }
 
-  /* GALVANISE — sticky stage, scroll-scrubbed list */
-  .galv-head{ padding:10vh 0 0; text-align:center; }
-  .galv-head h2{ color:var(--iron); }
+  /* GALVANISE — fully locked screen (like the knowledge), heading shifted 200px down */
   .galv-run{ position:relative; height:300vh; }
-  .galv-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; }
+  .galv-stick{ position:sticky; top:0; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:200px; }
+  .galv-headin{ text-align:center; margin-bottom:9vh; }
+  .galv-headin h2{ color:var(--iron); }
   .galv-inner{ position:relative; display:flex; align-items:center; justify-content:center; gap:16px; max-width:calc(100vw - 40px); }
   .galv-tag{ display:flex; align-items:center; gap:16px; font-family:var(--sans); font-weight:700; font-size:clamp(20px,2.5vw,36px); line-height:1; color:var(--iron); white-space:nowrap; z-index:2; }
   .galv-tag .gplus{ display:inline-flex; width:17px; height:17px; }
@@ -155,7 +157,7 @@
   .galv-window{ position:relative; overflow:visible; }
   .galv-list{ list-style:none; text-align:left; will-change:transform; }
   .galv-list li{ font-family:var(--serif); font-size:var(--fs-list); line-height:1.1; white-space:nowrap; color:var(--ivory); }
-  .galv-list .galv-note{ font-family:var(--sans); max-width:38ch; margin-top:100px;
+  .galv-list .galv-note{ font-family:var(--sans); max-width:38ch; margin-top:70px;
     margin-left:calc(-16px - clamp(40px, 4.6vw, 66px)); /* flush with the left bracket's outer edge */
     font-size:20px; line-height:24px; color:var(--iron); white-space:normal; }
   .galv-note b{ display:block; font-weight:400; margin-bottom:20px; }
@@ -166,15 +168,16 @@
     .galv-list .galv-note{ margin-left:0; }
   }
 
-  /* THE DEPARTMENT — names roll into a wall (scroll-scrubbed, motion-blurred) */
-  .names-head{ padding:10vh 0 0; text-align:center; }
-  .names-head h2{ color:var(--iron); }
+  /* THE DEPARTMENT — names roll into a wall (scroll-scrubbed) */
+  .names-headin{ position:absolute; left:0; right:0; text-align:center; z-index:2;
+    top:calc(50vh - clamp(96px, 12.7vw, 184px)/2 - 175px); }   /* sits just above the bracket pair */
+  .names-headin h2{ color:var(--iron); }
   .names-run{ position:relative; height:560vh; }
   .names-stick{ position:sticky; top:0; height:100vh; overflow:hidden; }
   .names-roll{ position:absolute; left:0; right:0; top:0; text-align:center; will-change:transform; }
   .names-roll .nrow{ font-family:var(--serif); white-space:nowrap; }
-  .names-roll .nwall{ font-family:var(--serif); font-size:14px; line-height:normal; color:rgba(250,247,230,.5);
-    white-space:pre-wrap; text-align:center; max-width:min(1389px, 96vw); margin:60px auto 0; }
+  .names-roll .nwall{ font-family:var(--serif); font-size:14px; line-height:normal; color:rgba(250,247,230,.4);
+    white-space:pre-wrap; text-align:center; max-width:min(1389px, 96vw); margin:0 auto; }
   .names-brk{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     gap:min(692px, 52vw); pointer-events:none; }
   .names-brk img{ height:clamp(96px, 12.7vw, 184px); width:auto; display:block; }
@@ -185,7 +188,7 @@
   /* MEET THE KNOWLEDGE — sticky screen, stages scrubbed by scroll (hover still works) */
   .know-run{ position:relative; height:440vh; }
   .know-stick{ position:sticky; top:0; height:100vh; display:flex; flex-direction:column; justify-content:center; }
-  .know{ padding:0; }
+  .know{ padding-top:0; padding-bottom:0; width:100%; }   /* auto margins suppress flex stretch — force full width */
   .know-head{ text-align:center; margin-bottom:6vh; }
   @media(max-width:900px){
     .know-run{ height:auto; }
@@ -196,13 +199,13 @@
   .know-head .sub{ margin:16px auto 0; font-size:14px; line-height:20px; color:var(--iron); max-width:46ch; }
   .know-grid{ display:grid; grid-template-columns:524fr 740fr; gap:16px; align-items:stretch; }
   @media(max-width:900px){ .know-grid{ grid-template-columns:1fr; gap:40px; } }
-  .know-col .cap{ border-bottom:1px solid rgba(8,17,27,.5); padding-bottom:10px; margin-bottom:26px; }
-  .know-col .cap span{ color:var(--iron); opacity:.65; }
+  .know-col .cap{ border-bottom:1px solid var(--iron); padding-bottom:10px; margin-bottom:26px; }
+  .know-col .cap span{ color:var(--iron); }
   .know-left{ display:flex; flex-direction:column; }
   .know-spacer{ flex:1; min-height:40px; }
   .krow{ padding:14px 2px; }
   .know-active{ padding:0 2px; transition:opacity .25s; }
-  .know-rest .krow{ border-top:1px solid rgba(8,17,27,.5); transition:opacity .25s; }
+  .know-rest .krow{ border-top:1px solid var(--iron); transition:opacity .25s; cursor:pointer; }
   .know-rest .krow:last-child{ padding-bottom:0; }
   .krow-head, .krow.simple{ display:flex; align-items:center; justify-content:space-between;
     font-family:var(--sans); font-weight:700; font-size:20px; line-height:24px; color:var(--iron); }
@@ -231,11 +234,11 @@
   @media(max-width:900px){ .sec-grid{ grid-template-columns:1fr; } }
   .sitem{ display:grid; grid-template-columns:108px 1fr; align-items:start;
     border-top:1px solid rgba(250,247,230,.35); padding:11px 0; min-height:75px; }
-  .sitem .idx{ padding-top:4px; color:var(--ivory); opacity:.85; }
-  .sitem .txt{ font-family:var(--sans); font-size:20px; font-weight:700; line-height:24px; color:var(--ivory); }
+  .sitem .idx{ padding-top:4px; color:var(--ivory); opacity:.85; font-weight:500; }
+  .sitem .txt{ font-family:var(--sans); font-size:20px; font-weight:500; line-height:24px; color:var(--ivory); }
 
   /* WORK WITH US */
-  .cta{ padding:6vh 0 18vh; text-align:center; }
+  .cta{ padding:calc(6vh + 100px) 0 18vh; text-align:center; }
   .cta-btn{ display:inline-flex; align-items:center; justify-content:center;
     background:var(--rust); color:var(--ivory); font-family:var(--serif); font-weight:400;
     font-size:var(--fs-h2); line-height:1; padding:40px 100px; border-radius:147px;
@@ -246,7 +249,7 @@
   /* FOOTER — the gradient simply ends; bracketed tagline centred on screen */
   .foot{ position:relative; background:transparent; color:var(--ivory); min-height:100vh;
     display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
-  .foot-wave{ position:absolute; left:0; bottom:0; width:100%; height:50%; pointer-events:none; display:block; }
+  .foot-wave{ position:absolute; left:0; bottom:0; width:100%; height:100%; pointer-events:none; display:block; }
   .foot .inner{ position:relative; z-index:1; max-width:1004px; margin:0 auto; padding:0 40px; text-align:center; }
   .foot .ftag{ position:relative; display:inline-block; font-family:var(--serif); font-weight:400;
     font-size:var(--fs-h2); line-height:1; letter-spacing:0; }
@@ -335,24 +338,27 @@
             </video>
             <div class="veil"></div>
             <div class="noise"></div>
-            <div class="hlabel eyebrow">how we work</div>
-            <div class="how-step" id="howStep">
-              <div class="how-num">
-                <span class="hbrk"><img src="assets/svg/bracket_light_left.svg" alt=""></span>
-                <span class="num" id="howNum">1</span>
-                <span class="hbrk"><img src="assets/svg/bracket_light_right.svg" alt=""></span>
+            <div class="how-center">
+              <div class="hlabel eyebrow">how we work</div>
+              <div class="how-step" id="howStep">
+                <div class="how-num">
+                  <span class="hbrk"><img src="assets/svg/bracket_light_left.svg" alt=""></span>
+                  <span class="num" id="howNum">1</span>
+                  <span class="hbrk"><img src="assets/svg/bracket_light_right.svg" alt=""></span>
+                </div>
+                <span class="word" id="howWord">Discover.</span>
               </div>
-              <span class="word" id="howWord">Discover.</span>
+              <p class="how-body" id="howBody">We map where AI helps in your firm, and where to start. Discovery and scoping. AI workshops. First pilots. A strategy worth committing to.</p>
             </div>
-            <p class="how-body" id="howBody">We map where AI helps in your firm, and where to start. Discovery and scoping. AI workshops. First pilots. A strategy worth committing to.</p>
+            <canvas class="how-dither" id="howDither" width="300" height="169"></canvas>
           </div>
         </div>
       </div>
 
       <!-- GALVANISE — sticky stage, scrubbed capability list -->
-      <div class="galv-head wrap" id="galvHead"><h2 class="h2 reveal">Galvanise change across your firm.</h2></div>
       <div class="galv-run" id="galvRun">
         <div class="galv-stick">
+          <div class="galv-headin" id="galvHead"><h2 class="h2 reveal">Galvanise change across your firm.</h2></div>
           <div class="galv-inner">
             <div class="galv-tag">Your AI Department
               <span class="gplus"><img src="assets/svg/plus_dark.svg" alt="+"></span>
@@ -374,14 +380,14 @@
         </div>
       </div>
       <!-- THE DEPARTMENT — wall of names -->
-      <div class="names-head wrap" id="namesHead"><h2 class="h2 reveal">Meet your new AI Department.</h2></div>
       <div class="names-run" id="namesRun">
         <div class="names-stick">
           <div class="names-roll" id="namesRoll"></div>
-          <div class="names-brk" id="namesBrk">
+          <div class="names-brk reveal" id="namesBrk">
             <img src="assets/svg/bracket_dark_left.svg" alt="">
             <img src="assets/svg/bracket_dark_right.svg" alt="">
           </div>
+          <div class="names-headin reveal" id="namesHead"><h2 class="h2">Meet your new AI Department.</h2></div>
           <div class="names-final" id="namesFinal">To unlock more of<br>what makes us human.</div>
         </div>
       </div>
@@ -564,14 +570,17 @@
     [0.18,224,125,67],[0.22,207,81,43],[0.33,197,84,58],[0.40,189,106,90],
     [0.48,198,154,134],[0.74,198,154,134],[0.80,162,168,198],[0.85,124,132,182],
     [0.89,91,99,160],[0.92,58,66,116],[1,28,36,64]];
-  function forgeLum(f){
-    if(f>=1) return 0.06;                                      // footer iron
-    if(f<=0) return 0.96;
+  function forgeColor(f){
+    if(f>=1) return [28,36,64];
+    if(f<=0) return [250,247,230];
     var i=1; while(i<STOPS.length && STOPS[i][0]<f) i++;
     var a=STOPS[i-1], b=STOPS[Math.min(i,STOPS.length-1)];
     var t=(f-a[0])/Math.max(1e-6,(b[0]-a[0]));
-    var r=lerp(a[1],b[1],t), g=lerp(a[2],b[2],t), bl=lerp(a[3],b[3],t);
-    return (0.299*r+0.587*g+0.114*bl)/255;
+    return [lerp(a[1],b[1],t), lerp(a[2],b[2],t), lerp(a[3],b[3],t)];
+  }
+  function forgeLum(f){
+    var c=forgeColor(f);
+    return (0.299*c[0]+0.587*c[1]+0.114*c[2])/255;
   }
   var lastForgeF=-1;
   function chromeTarget(p){
@@ -603,13 +612,15 @@
   var stmtP=0;
   function pow3out(x){ return 1-Math.pow(1-x,3); }
   function stmtTarget(){
-    var top=elTop(stmtRun), h=stmtRun.offsetHeight - innerHeight;
+    var lead=innerHeight*0.45;                                 // words begin rising while the hero bone is still settling
+    var top=elTop(stmtRun)-lead, h=stmtRun.offsetHeight - innerHeight + lead;
     return clamp((window.scrollY - top)/h, 0, 1);
   }
   if(REDUCE){ stmtInners.forEach(function(s){ s.style.transform='translateY(0%)'; }); }
 
   /* ---------- logos: scroll-scrubbed travel, first -> last ---------- */
   var LOGOS=[
+    ['op-lovable.svg','Lovable'],['op-huggingface.svg','Hugging Face'],                       // loop lead-in
     ['op-palantir.svg','Palantir'],['op-mckinsey.svg','McKinsey & Company'],['op-jpmorgan.svg','J.P. Morgan'],
     ['op-cabinet-office.svg','Cabinet Office'],['op-paypal.svg','PayPal'],['op-bcg.svg','BCG'],['op-meta.svg','Meta'],
     ['op-bloomberg.svg','Bloomberg'],['op-openai.svg','OpenAI'],['op-deepmind.svg','DeepMind'],['op-google.svg','Google'],
@@ -627,6 +638,26 @@
   /* ---------- how we work: scrubbed steps ---------- */
   var howRun=document.getElementById('howRun'), howCard=document.querySelector('.how-card');
   var howStep=document.getElementById('howStep'), howBody=document.getElementById('howBody');
+  /* the card leaves through the same bottom-up dither as the hero: dots of the
+     background gradient accumulate from the bottom until the card is covered */
+  var howDither=document.getElementById('howDither'), hdctx=howDither.getContext('2d');
+  var HDW=300, HDH=169, lastHowCov=-1;
+  function renderHowDither(cov){
+    if(cov===lastHowCov && cov<=0) return;
+    lastHowCov=cov;
+    if(cov<=0){ hdctx.clearRect(0,0,HDW,HDH); return; }
+    var f=(window.scrollY + innerHeight*0.5 - elTop(forge))/forge.offsetHeight;
+    var c=forgeColor(f), out=hdctx.createImageData(HDW,HDH), o=out.data;
+    var base=cov*(1+BIAS);
+    for(var y=0;y<HDH;y++){
+      var thresh=base - BIAS*(1-(y+0.5)/HDH);   // bottom rows cover first
+      for(var x=0;x<HDW;x++){
+        var px=y*HDW+x, i4=px*4;
+        if(RND[px]<thresh){ o[i4]=c[0]; o[i4+1]=c[1]; o[i4+2]=c[2]; o[i4+3]=255; }
+      }
+    }
+    hdctx.putImageData(out,0,0);
+  }
   var howNum=document.getElementById('howNum'), howWord=document.getElementById('howWord');
   var steps=[
     ['1','Discover.','We map where AI helps in your firm, and where to start. Discovery and scoping. AI workshops. First pilots. A strategy worth committing to.'],
@@ -660,16 +691,19 @@
       d.style.cssText='font-size:clamp(44px,8.33vw,120px);line-height:1;color:#faf7e6;';
       d.textContent=n; namesRoll.appendChild(d);
     });
-    // densifying rows: gradually more names per row, shrinking towards the wall — all bone
-    var TR=[[2,96],[2,88],[2,80],[3,72],[3,66],[3,60],[4,54],[4,48],[4,43],[5,38],[5,34],[6,30],[7,26],[8,23],[10,20],[12,17]];
-    TR.forEach(function(cfg){
-      var d=document.createElement('div'); d.className='nrow';
-      d.style.cssText='font-size:'+Math.round(Math.min(cfg[1],innerWidth*0.064))+'px;line-height:1.18;color:#faf7e6;white-space:pre;';
-      d.textContent=take(cfg[0]).join('   ');
-      namesRoll.appendChild(d);
+    // densifying groups: [lines, names per line, font px] — growing runs of 2s, 3s, 4s…
+    // shrinking all the way down to the wall
+    var GROUPS=[[3,2,96],[5,2,80],[6,3,64],[7,4,48],[8,5,36],[9,6,28],[10,7,21],[8,8,17]];
+    GROUPS.forEach(function(gr){
+      for(var li=0; li<gr[0]; li++){
+        var d=document.createElement('div'); d.className='nrow';
+        d.style.cssText='font-size:'+Math.round(Math.min(gr[2],innerWidth*0.064))+'px;line-height:1.18;color:#faf7e6;white-space:pre;';
+        d.textContent=take(gr[1]).join(' ');
+        namesRoll.appendChild(d);
+      }
     });
     nwall=document.createElement('div'); nwall.className='nwall';
-    nwall.textContent=take(1400).join('   ');
+    nwall.textContent=take(1400).join(' ');
     namesRoll.appendChild(nwall);
   })();
 
@@ -701,9 +735,7 @@
       var a=document.createElement('span'); a.className='arw';
       var im=document.createElement('img'); im.src='assets/svg/arrow_dark.svg'; im.alt='';
       a.appendChild(im); d.appendChild(s); d.appendChild(a);
-      function activateK(){ setKnowStage(i); }
-      d.addEventListener('mouseenter', activateK);
-      d.addEventListener('click', activateK);
+      d.addEventListener('click', function(){ setKnowStage(i); });   // click switches; scroll scrubs
       knowRest.appendChild(d);
     });
   }
@@ -796,17 +828,19 @@
     mx += (-lt*span-mx)*Math.min(1,dt*8);
     track.style.transform='translateX('+mx+'px)';
 
-    /* how we work: the card grows from its resting size to fill the screen,
-       the steps scrub while full-bleed, then the sticky release slides it up */
+    /* how we work: the card starts growing while it approaches, fills the screen,
+       the steps scrub full-bleed, then it dithers away bottom-up and slides off */
     var ht=elTop(howRun), hp=clamp((sy-ht)/(howRun.offsetHeight-vh),0,1);
-    var g=inv(hp,0,0.18); g=g*g*(3-2*g);
+    var g=clamp((sy-(ht-vh*0.55))/(vh*0.55+(howRun.offsetHeight-vh)*0.08),0,1); g=g*g*(3-2*g);
     var vw2=innerWidth;
     var wBase=vw2<=900 ? vw2-48 : Math.min(1279, vw2-160);
     var hBase=Math.min(wBase*720/1279, vh);
     howCard.style.width=Math.round(lerp(wBase,vw2,g))+'px';
     howCard.style.height=Math.round(lerp(hBase,vh,g))+'px';
     howCard.style.borderRadius=Math.round(10*(1-g))+'px';
-    var seg=Math.min(2.999, inv(hp,0.18,1)*3), idx=Math.floor(seg), local2=seg-idx;
+    var howCov=inv(hp,0.86,0.985);
+    renderHowDither(howCov);
+    var seg=Math.min(2.999, inv(hp,0.10,0.86)*3), idx=Math.floor(seg), local2=seg-idx;
     if(idx!==hi){ hi=idx; var s=steps[hi]; howNum.textContent=s[0]; howWord.textContent=s[1]; howBody.textContent=s[2]; }
     var alpha=1;                                              // fade only across step boundaries, never on entry/exit
     if(idx>0 && local2<0.12) alpha=local2/0.12;
@@ -843,6 +877,8 @@
       var cC=lerp(startC,endC,nre);
       namesRoll.style.transform='translateY('+(vh/2-cC)+'px)';
       namesFinal.style.opacity=inv(nrp,0.88,0.97);            // closing headline once the wall has landed
+      var nhFade=1-inv(nrp,0.72,0.88);                        // section heading bows out as the wall takes over
+      if(nhFade<1) namesHead.style.opacity=nhFade; else namesHead.style.removeProperty('opacity');
     }
 
     requestAnimationFrame(frame);
@@ -898,6 +934,8 @@
     '  float horizon=uv.y*1.35+0.4*w+0.35;\n'+
     '  float fill=smoothstep(0.55,-0.55,horizon);\n'+
     '  float intensity=clamp(mix(fill,0.5+0.5*w,0.3)-0.12,0.0,1.0);\n'+
+    '  float vy=gl_FragCoord.y/res.y;\n'+
+    '  intensity*=smoothstep(0.90,0.25,vy);\n'+   // thins toward the top; the top 10% stays clear
     '  float bit=step(bayer8(cell),intensity);\n'+
     '  float a=bit*u_alpha;\n'+
     '  fragColor=vec4(u_fg*a, a); }';   // premultiplied: transparent where the dither is off
@@ -947,7 +985,7 @@
   /* ---------- scroll reveals ---------- */
   var io = new IntersectionObserver(function(entries){
     entries.forEach(function(e){ e.target.classList.toggle('in', e.isIntersecting); });   // reveal in, and un-reveal when scrolled back out
-  }, { threshold:0.16, rootMargin:'0px 0px -8% 0px' });
+  }, { threshold:0, rootMargin:'0px 0px -13% 0px' });         // trigger line sits above the fold so the fade-out is visible while scrolling up
   document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
 })();
 </script>
