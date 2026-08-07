@@ -865,8 +865,13 @@
 
     mover.style.transform = logoTransform(inv(p,0.06,0.30));
 
+    /* how-card state — also feeds the chrome flip below */
+    var ht=elTop(howRun), hp=clamp((sy-ht)/(howRun.offsetHeight-vh),0,1);
+    var g=clamp((sy-(ht-vh*0.55))/(vh*0.55+(howRun.offsetHeight-vh)*0.08),0,1); g=g*g*(3-2*g);
+
     /* chrome colours */
     var target=chromeTarget(p);
+    if(p>=0.999 && g>0.85 && hp<0.90) target=1;               // fullscreen how video: negative chrome — ivory on dark
     uiLit += (target-uiLit)*Math.min(1,dt*7);
     var d=inv(p,0.095,0.22);
     lgFront.style.opacity = 1-d;
@@ -927,8 +932,6 @@
 
     /* how we work: the card starts growing while it approaches, fills the screen,
        the steps scrub full-bleed, then it dithers away bottom-up and slides off */
-    var ht=elTop(howRun), hp=clamp((sy-ht)/(howRun.offsetHeight-vh),0,1);
-    var g=clamp((sy-(ht-vh*0.55))/(vh*0.55+(howRun.offsetHeight-vh)*0.08),0,1); g=g*g*(3-2*g);
     var vw2=innerWidth;
     var wBase=vw2<=900 ? vw2-48 : Math.min(1279, vw2-160);
     var hBase=Math.min(wBase*720/1279, vh);
