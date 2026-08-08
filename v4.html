@@ -381,7 +381,7 @@
       </div>
 
       <!-- HOW WE WORK — sticky video, scrubbed steps -->
-      <div class="vgap-q" aria-hidden="true"></div>
+      <div class="vgap" aria-hidden="true"></div>
       <div class="how-head wrap"><h2 class="h2">How we work.</h2></div>
       <div class="how-run" id="howRun">
         <div class="how-stick">
@@ -688,7 +688,9 @@
     ['op-cabinet-office.svg','Cabinet Office'],['op-paypal.svg','PayPal'],['op-bcg.svg','BCG'],['op-meta.svg','Meta'],
     ['op-bloomberg.svg','Bloomberg'],['op-openai.svg','OpenAI'],['op-deepmind.svg','DeepMind'],['op-google.svg','Google'],
     ['op-microsoft.svg','Microsoft'],['op-lovable.svg','Lovable'],['op-huggingface.svg','Hugging Face'],
-    ['op-palantir.svg','Palantir'],['op-mckinsey.svg','McKinsey & Company']                // loop lead-out
+    ['op-palantir.svg','Palantir'],['op-mckinsey.svg','McKinsey & Company'],               // loop lead-out
+    ['op-jpmorgan.svg','J.P. Morgan'],['op-cabinet-office.svg','Cabinet Office'],
+    ['op-paypal.svg','PayPal'],['op-bcg.svg','BCG'],['op-meta.svg','Meta']
   ];
   var marquee=document.getElementById('marquee'), track=document.getElementById('mtrack');
   var tickerWrap=document.getElementById('tickerWrap'), tickerPin=document.getElementById('tickerPin');
@@ -706,7 +708,7 @@
     img.addEventListener('error', function(){ span.className='mlogo txt'; span.textContent=l[1]; });
     span.appendChild(img); track.appendChild(span);
   });
-  var mx=0;
+  var mx=0, pY=0;
 
   /* ---------- how we work: scrubbed steps ---------- */
   var howRun=document.getElementById('howRun'), howCard=document.querySelector('.how-card');
@@ -1098,15 +1100,18 @@
       }
     }
 
-    /* logos: first logo on entry, last logo on exit — driven from document position so
-       the travel keeps flowing while the row pins centred for its quarter-viewport hold */
-    var twTop=elTop(tickerWrap), twH=tickerWrap.offsetHeight;
-    var lt=clamp((sy-(twTop-vh))/(twH+vh),0,1);
+    /* logos: first logo on entry, last logo on exit — measured from the rendered rect,
+       which carries the parallax, so the travel spans the row's whole on-screen life */
+    var mr=marquee.getBoundingClientRect();
+    var lt=clamp((vh-mr.top)/(vh+mr.height),0,1);
     var span=Math.max(0,track.scrollWidth-marquee.clientWidth);
     mx += (-lt*span-mx)*Math.min(1,dt*8);
     track.style.transform='translateX('+mx+'px)';
-    /* 50% parallax: the block scrolls at half the page's speed, zeroed when centred */
-    tickerPin.style.transform='translateY('+Math.round((sy-(elTop(tickerPin)+tickerPin.offsetHeight/2-vh/2))*0.5)+'px)';
+    /* 50% parallax, temporally smoothed at subpixel precision — a raw rounded per-frame
+       write lands one frame behind the scroll and reads as vertical jitter */
+    var pT=(sy-(elTop(tickerPin)+tickerPin.offsetHeight/2-vh/2))*0.5;
+    pY += (pT-pY)*Math.min(1,dt*12);
+    tickerPin.style.transform='translateY('+pY.toFixed(2)+'px)';
 
     /* how we work: the card starts growing while it approaches, fills the screen,
        the steps scrub full-bleed, then it dithers away bottom-up and slides off */
