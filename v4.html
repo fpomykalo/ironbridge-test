@@ -42,7 +42,7 @@
   .wi{ display:inline-block; will-change:transform; transform:translateY(115%); }
   .rline{ display:block; }
   .fheld{ position:fixed; left:0; right:0; z-index:2; }       /* flow titles locked at their final spot while revealing */
-  .vgap{ height:100vh; }
+  .vgap{ height:50vh; }
 
   /* noise overlay: ONE viewport-fixed layer over the whole page — a single tile, so it
      never repeats, never seams between sections, and holds still while you scroll */
@@ -122,7 +122,7 @@
   .tr-hover:hover .tr-stack{ transform:translateY(-50%); }
 
   /* STATEMENT — pinned word-by-word clip-rise (scroll-scrubbed) */
-  .stmt-run{ position:relative; height:300vh; }
+  .stmt-run{ position:relative; height:250vh; }
   .stmt-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; padding:0 6vw; text-align:center; }
   .stmt-h{ font-family:var(--serif); font-weight:400; font-size:var(--fs-display); letter-spacing:0; color:var(--iron); }
   /* while the stage is still approaching, the heading is viewport-fixed — a rAF-driven
@@ -143,7 +143,7 @@
   .mlogo.txt{ font-family:var(--serif); font-size:26px; line-height:1; color:var(--iron); opacity:.9; white-space:nowrap; }
 
   /* HOW WE WORK — sticky card, scroll-scrubbed steps */
-  .how-head{ padding:6vh 0 0; margin-bottom:100px; text-align:center; }
+  .how-head{ padding:6vh 0 0; margin-bottom:100px; text-align:center; z-index:3; }  /* above the card so the title visibly scrolls off over the video */
   .how-head h2{ color:var(--iron); }
   .how-run{ position:relative; height:320vh; }
   .how-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; }
@@ -180,15 +180,14 @@
   .galv-window{ position:relative; overflow:visible; }
   .galv-list{ list-style:none; text-align:left; will-change:transform; }
   .galv-list li{ font-family:var(--serif); font-size:var(--fs-list); line-height:1.1; white-space:nowrap; color:var(--ivory); }
-  .galv-list .galv-note{ font-family:var(--sans); max-width:38ch; margin-top:70px;
-    margin-left:calc(-16px - clamp(48px, 6.39vw, 92px)); /* flush with the left bracket's outer edge */
-    font-size:20px; line-height:24px; color:var(--iron); white-space:normal; }
+  .galv-list .galv-note{ font-family:var(--sans); max-width:40ch; margin:70px auto 0;
+    font-size:14px; line-height:20px; color:var(--ivory); opacity:.92; text-align:center;
+    white-space:normal; }   /* same voice as the how-we-work body copy, centred between the brackets */
   .galv-note b{ display:block; font-weight:400; margin-bottom:20px; }
   @media(max-width:900px){
     .galv-inner{ flex-direction:column; gap:30px; }
     .galv-frame{ gap:12px; max-width:calc(100vw - 32px); }
     .galv-frame .brk{ height:60px; }
-    .galv-list .galv-note{ margin-left:0; }
   }
 
   /* THE DEPARTMENT — names roll into a wall (scroll-scrubbed) */
@@ -470,6 +469,8 @@
       </section>
       </div><!-- /know-stick -->
       </div><!-- /know-run -->
+
+      <div class="vgap" aria-hidden="true"></div>
 
       <!-- SECURITY AND CONTROL -->
       <section class="sec wrap">
