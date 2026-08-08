@@ -117,7 +117,9 @@
   .reveal{ opacity:0; transform:translateY(26px); transition:opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1); }
   .reveal.in{ opacity:1; transform:none; }
 
-  /* hover text roll: a masked stack of two copies slides one line up on hover */
+  /* hover text roll: every letter is its own masked stack — they rise one after
+     another on a small cascade delay instead of the whole line moving at once */
+  .tr-word{ display:inline-block; white-space:nowrap; }
   .tr-roll{ display:inline-block; overflow:hidden; vertical-align:top; }
   .tr-stack{ display:block; transition:transform .34s cubic-bezier(.22,1,.36,1); will-change:transform; }
   .tr-stack > span{ display:block; }
@@ -348,7 +350,7 @@
       <span class="hline"><i id="heatFill"></i></span>
       <span class="hmeta"><b id="heatTemp">1300&deg;C</b><span id="heatLabel">White heat</span></span>
     </div>
-    <div class="strap" id="strap">The AI department for<br>the everyday economy.</div>
+    <div class="strap" id="strap">The AI department for<br>the everyday economy</div>
   </div>
 
   <main class="content">
@@ -1394,15 +1396,31 @@
   /* ---------- hover text roll on every interactive text ---------- */
   function rollify(el, hoverEl){
     if(!el || el.querySelector('.tr-roll')) return;
-    var t=el.innerHTML; if(!el.textContent.trim()) return;     // keep markup (line breaks) inside the rolled copies
+    if(!el.textContent.trim()) return;
     (hoverEl||el).classList.add('tr-hover');
+    var nodes=Array.prototype.slice.call(el.childNodes), ci=0;
     el.textContent='';
-    var m=document.createElement('span'); m.className='tr-roll';
-    var s=document.createElement('span'); s.className='tr-stack';
-    var a=document.createElement('span'); a.innerHTML=t;
-    var bb=document.createElement('span'); bb.innerHTML=t;
-    s.appendChild(a); s.appendChild(bb); m.appendChild(s); el.appendChild(m);
-    m.style.height=a.offsetHeight+'px';
+    nodes.forEach(function(n){
+      if(n.nodeType===1 && n.tagName==='BR'){ el.appendChild(document.createElement('br')); return; }
+      (n.textContent||'').split(/(\s+)/).forEach(function(part){
+        if(!part) return;
+        if(/^\s+$/.test(part)){ el.appendChild(document.createTextNode(' ')); return; }
+        var word=document.createElement('span'); word.className='tr-word';
+        for(var k=0; k<part.length; k++){
+          var m=document.createElement('span'); m.className='tr-roll';
+          var s=document.createElement('span'); s.className='tr-stack';
+          s.style.transitionDelay=Math.min(ci*12, 240)+'ms';   // the letter-by-letter cascade
+          var a=document.createElement('span'); a.textContent=part[k];
+          var b=document.createElement('span'); b.textContent=part[k];
+          s.appendChild(a); s.appendChild(b); m.appendChild(s); word.appendChild(m);
+          ci++;
+        }
+        el.appendChild(word);
+      });
+    });
+    el.querySelectorAll('.tr-roll').forEach(function(m){
+      var a=m.querySelector('.tr-stack > span'); m.style.height=a.offsetHeight+'px';
+    });
   }
   document.querySelectorAll('.nav .nitem, .nav .ncta, .foot .links a, .cta-btn, .alfred .logbtn').forEach(function(el){ rollify(el); });
   document.querySelectorAll('.sec .sitem').forEach(function(it){ rollify(it.querySelector('.txt'), it); });   // not clickable, but they roll all the same
