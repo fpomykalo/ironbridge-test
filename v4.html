@@ -41,6 +41,8 @@
   .w{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.14em; line-height:1; }
   .wi{ display:inline-block; will-change:transform; transform:translateY(115%); }
   .rline{ display:block; }
+  .fheld{ position:fixed; left:0; right:0; z-index:2; }       /* flow titles locked at their final spot while revealing */
+  .vgap{ height:100vh; }
 
   /* noise overlay: ONE viewport-fixed layer over the whole page — a single tile, so it
      never repeats, never seams between sections, and holds still while you scroll */
@@ -214,7 +216,6 @@
   .know-stick{ position:sticky; top:0; height:100vh; display:flex; flex-direction:column; justify-content:center; }
   .know{ padding-top:0; padding-bottom:0; width:100%; }   /* auto margins suppress flex stretch — force full width */
   .know-head{ text-align:center; margin-bottom:6vh; }
-  .know-head.held{ position:fixed; left:0; right:0; z-index:2; margin-bottom:0; }
   @media(max-width:900px){
     .know-run{ height:auto; }
     .know-stick{ position:static; height:auto; }
@@ -270,8 +271,11 @@
   .cta-btn{ display:inline-flex; align-items:center; justify-content:center;
     background:var(--rust); color:var(--ivory); font-family:var(--serif); font-weight:400;
     font-size:var(--fs-h2); line-height:1; padding:40px 100px; border-radius:147px;
-    text-decoration:none; transition:transform .3s cubic-bezier(.22,1,.36,1), background .3s; }
-  .cta-btn:hover{ transform:translateY(-3px); background:#d95c34; }
+    text-decoration:none;
+    /* opacity/transform stay on the reveal's easing — a short transform transition here
+       used to override the reveal and made the pill pop in abruptly */
+    transition:opacity .9s cubic-bezier(.22,1,.36,1), transform .9s cubic-bezier(.22,1,.36,1), background .3s; }
+  .cta-btn:hover{ background:#d95c34; }
   .cta-sub{ margin-top:34px; font-size:14px; line-height:20px; color:var(--ivory); opacity:.9; }
 
   /* FOOTER — the gradient simply ends; bracketed tagline centred on screen */
@@ -281,9 +285,9 @@
   .foot .inner{ position:relative; z-index:1; max-width:1004px; margin:0 auto; padding:0 40px; text-align:center; }
   .foot .ftag{ position:relative; display:inline-block; font-family:var(--serif); font-weight:400;
     font-size:var(--fs-h2); line-height:1; letter-spacing:0; }
-  .foot .brk{ position:absolute; top:50%; transform:translateY(-50%); height:170px; width:auto; opacity:.92; }
+  .foot .brk{ position:absolute; top:50%; transform:translateY(-50%); height:170px; width:auto; opacity:.92; overflow:hidden; }
   .foot .brk.l{ left:-110px; } .foot .brk.r{ right:-110px; }
-  .foot .brk img{ height:100%; width:auto; display:block; }
+  .foot .brk img{ height:100%; width:auto; display:block; transform:translateY(115%); will-change:transform; }
   .foot .ft-lines{ display:inline-block; }
   .foot .ftag.held{ position:fixed; left:50%; transform:translateX(-50%); z-index:2; }
   @media(max-width:820px){ .foot .brk{ display:none; } }
@@ -365,7 +369,7 @@
       </div>
 
       <!-- HOW WE WORK — sticky video, scrubbed steps -->
-      <div class="how-head wrap"><h2 class="h2 reveal">How we work.</h2></div>
+      <div class="how-head wrap"><h2 class="h2">How we work.</h2></div>
       <div class="how-run" id="howRun">
         <div class="how-stick">
           <div class="how-card reveal">
@@ -427,6 +431,8 @@
         </div>
       </div>
 
+      <div class="vgap" aria-hidden="true"></div>
+
       <!-- MEET THE KNOWLEDGE -->
       <div class="know-run" id="knowRun">
       <div class="know-stick">
@@ -467,7 +473,7 @@
 
       <!-- SECURITY AND CONTROL -->
       <section class="sec wrap">
-        <h2 class="h2 reveal">Security and control.</h2>
+        <h2 class="h2">Security and control.</h2>
         <div class="sec-grid">
           <div class="sitem reveal"><span class="idx eyebrow">/01</span><span class="txt">Flexible deployment options.</span></div>
           <div class="sitem reveal"><span class="idx eyebrow">/08</span><span class="txt">Mirrored source-tool permissions.</span></div>
@@ -931,14 +937,39 @@
   var knowHeadInners=riseify(document.querySelector('.know-head h2'));
   var finalInners=riseify(namesFinal);
   var ftagInners=riseify(document.querySelector('.ftag .ft-lines'));
-  if(REDUCE) [].concat(galvHeadInners,knowHeadInners,finalInners,ftagInners).forEach(function(s){ s.style.transform='translateY(0%)'; });
   /* in-flow titles get placeholder spacers so locking them steals no layout */
-  var knowHeadEl=document.querySelector('.know-head'), ftagEl=document.querySelector('.ftag');
+  function makeSpacer(el, margin){
+    var s=document.createElement('div'); s.style.display='none';
+    if(margin) s.style.marginBottom=margin;
+    el.parentNode.insertBefore(s, el.nextSibling);
+    return s;
+  }
+  var knowHeadEl=document.querySelector('.know-head h2'), ftagEl=document.querySelector('.ftag');
   var kHeldOn=false, fHeldOn=false;
-  var knowHeadSpacer=document.createElement('div'); knowHeadSpacer.style.display='none'; knowHeadSpacer.style.marginBottom='6vh';
-  knowHeadEl.parentNode.insertBefore(knowHeadSpacer, knowHeadEl.nextSibling);
-  var ftagSpacer=document.createElement('div'); ftagSpacer.style.display='none';
-  ftagEl.parentNode.insertBefore(ftagSpacer, ftagEl.nextSibling);
+  var knowHeadSpacer=makeSpacer(knowHeadEl, null);
+  var ftagSpacer=makeSpacer(ftagEl, null);
+  var ftagBrkImgs=document.querySelectorAll('.ftag .brk img');
+  /* passing titles ("How we work.", "Security and control."): locked 140px under the
+     nav while the page scrolls beneath, words rising, then they rejoin the flow */
+  function makeFlowTitle(sel, margin){
+    var el=document.querySelector(sel);
+    return { el:el, spacer:makeSpacer(el, margin), inners:riseify(el), on:false, anchor:0 };
+  }
+  var howTitle=makeFlowTitle('.how-head h2', null);
+  var secTitle=makeFlowTitle('.sec h2', '9vh');
+  function runFlowTitle(L, sy, vh){
+    if(!L.on) L.anchor=elTop(L.el)-140;
+    driveRise(L.inners, inv(sy, L.anchor-vh*0.45, L.anchor));
+    var on=sy>=L.anchor-vh*0.45 && sy<L.anchor;
+    if(on!==L.on){
+      if(on){ L.spacer.style.height=L.el.offsetHeight+'px'; L.spacer.style.display='block';
+        L.el.style.top='140px'; L.el.classList.add('fheld'); }
+      else { L.el.classList.remove('fheld'); L.el.style.removeProperty('top'); L.spacer.style.display='none'; }
+      L.on=on;
+    }
+  }
+  if(REDUCE) [].concat(galvHeadInners,knowHeadInners,finalInners,ftagInners,howTitle.inners,secTitle.inners).forEach(function(s){ s.style.transform='translateY(0%)'; });
+  if(REDUCE) ftagBrkImgs.forEach(function(b){ b.style.transform='translateY(0%)'; });
 
   /* ---------- heat labels ---------- */
   function heatLabelFor(t){
@@ -1166,18 +1197,27 @@
       var kHeld=sy>=kt-vh*0.45 && sy<kt;
       if(kHeld!==kHeldOn){
         if(kHeld){
-          var kTop=knowHeadEl.getBoundingClientRect().height, kFinal=elTop(knowHeadEl)-kt;
-          knowHeadSpacer.style.height=kTop+'px'; knowHeadSpacer.style.display='block';
-          knowHeadEl.style.top=kFinal+'px'; knowHeadEl.classList.add('held');
+          /* only the title locks — the sub copy scrolls up with the rest of the section */
+          var kFinal=elTop(knowHeadEl)-kt;
+          knowHeadSpacer.style.height=knowHeadEl.offsetHeight+'px'; knowHeadSpacer.style.display='block';
+          knowHeadEl.style.top=kFinal+'px'; knowHeadEl.classList.add('fheld');
         } else {
-          knowHeadEl.classList.remove('held'); knowHeadEl.style.removeProperty('top');
+          knowHeadEl.classList.remove('fheld'); knowHeadEl.style.removeProperty('top');
           knowHeadSpacer.style.display='none';
         }
         kHeldOn=kHeld;
       }
       driveRise(finalInners, sp||0);
+      runFlowTitle(howTitle, sy, vh);
+      runFlowTitle(secTitle, sy, vh);
       var footTop=elTop(footEl);
-      driveRise(ftagInners, inv(sy, footTop - vh*0.55, footTop - vh*0.08));
+      var fq=inv(sy, footTop - vh*0.55, footTop - vh*0.08);
+      driveRise(ftagInners, fq);
+      /* the footer brackets rise through their masks with the words — the left one on
+         the first word's beat, the right one on the last word's */
+      var fT=0.35*(ftagInners.length-1)+1, ftl=fq*fT;
+      ftagBrkImgs[0].style.transform='translateY('+(115*(1-pow3out(clamp(ftl,0,1))))+'%)';
+      ftagBrkImgs[1].style.transform='translateY('+(115*(1-pow3out(clamp(ftl-0.35*(ftagInners.length-1),0,1))))+'%)';
       var fHeld=sy>=footTop-vh*0.55 && sy<footTop-1;
       if(fHeld!==fHeldOn){
         if(fHeld){
