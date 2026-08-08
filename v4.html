@@ -53,7 +53,7 @@
     mix-blend-mode:overlay; opacity:.5; }
 
   /* ---------- HERO ---------- */
-  .hero-scroll{ position:relative; height:685vh; z-index:1; }
+  .hero-scroll{ position:relative; height:710vh; z-index:1; }
   .hero-sticky{ position:sticky; top:0; height:100vh; overflow:hidden; }
   #hero-video, #dither, .backdrop{ position:absolute; inset:0; width:100%; height:100%; }
   .backdrop{ background:var(--iron); }
@@ -120,6 +120,7 @@
   /* hover text roll: every letter is its own masked stack — they rise one after
      another on a small cascade delay instead of the whole line moving at once */
   .tr-word{ display:inline-block; white-space:nowrap; }
+  .tr-sp{ display:inline-block; white-space:pre; }            /* real element so flex containers keep the word gaps */
   .tr-roll{ display:inline-block; overflow:hidden; vertical-align:top; }
   .tr-stack{ display:block; transition:transform .34s cubic-bezier(.22,1,.36,1); will-change:transform; }
   .tr-stack > span{ display:block; }
@@ -597,7 +598,7 @@
   /* hero timing: the video scrubs 0..S1, then the final frame and headline hold for a
      quarter viewport before the bone dither (DSTART..DEND) covers the live frame
      bottom-up — landing before the content sheet overlaps at ~0.90 */
-  var S1=0.718, DSTART=0.761, DEND=0.880;
+  var S1=0.689, DSTART=0.770, DEND=0.885;   // half a viewport of held frame between scrub end and dither
   var duration=10, targetTime=0, seeking=false;
   video.addEventListener('loadedmetadata', function(){ duration=video.duration||10; try{ video.currentTime=0; }catch(e){} });
   video.addEventListener('seeked', function(){ seeking=false; });
@@ -877,6 +878,10 @@
     b.appendChild(h); b.appendChild(pB);
     kList.appendChild(b);
     rollify(s, b);                                            // stage titles still roll on hover
+    b.addEventListener('click', function(){                   // clicking a stage scrolls to its fully-open state
+      var kH=knowRun.offsetHeight-innerHeight;
+      window.scrollTo({ top: Math.round(elTop(knowRun) + (i/4 + 0.125)*kH), behavior:'smooth' });
+    });
     return b;
   });
   var kSpacer=document.createElement('div'); kSpacer.className='kspacer';
@@ -1404,7 +1409,7 @@
       if(n.nodeType===1 && n.tagName==='BR'){ el.appendChild(document.createElement('br')); return; }
       (n.textContent||'').split(/(\s+)/).forEach(function(part){
         if(!part) return;
-        if(/^\s+$/.test(part)){ el.appendChild(document.createTextNode(' ')); return; }
+        if(/^\s+$/.test(part)){ var sp=document.createElement('span'); sp.className='tr-sp'; sp.textContent=' '; el.appendChild(sp); return; }
         var word=document.createElement('span'); word.className='tr-word';
         for(var k=0; k<part.length; k++){
           var m=document.createElement('span'); m.className='tr-roll';
