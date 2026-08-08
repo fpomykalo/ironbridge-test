@@ -138,8 +138,10 @@
   .stmt-h .w{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.14em; line-height:1; }
   .stmt-h .wi{ display:inline-block; will-change:transform; transform:translateY(115%); }
 
-  /* LOGOS — scroll-scrubbed horizontal travel */
+  /* LOGOS — scroll-scrubbed horizontal travel; the row pins centred for a quarter viewport */
   .ticker-wrap{ padding:4vh 0 22vh; }
+  .ticker-pin{ position:sticky; }
+  .pin-tail25{ height:25vh; }
   .ticker-lead{ text-align:center; color:var(--iron); opacity:.9; margin-bottom:42px; }
   .marquee{ overflow:hidden; width:100%; }
   .mtrack{ display:flex; align-items:center; gap:64px; width:max-content; will-change:transform; padding:0 40px; }
@@ -261,8 +263,10 @@
     font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:.02em; display:flex; align-items:center; border:0; white-space:nowrap; flex:none; }
   @media(max-width:520px){ .alfred .seg i{ display:none; } .alfred .div{ margin:0 10px; } }
 
-  /* SECURITY — sits on the indigo depths, so it reads in bone */
-  .sec{ padding:8vh 0 20vh; }
+  /* SECURITY — sits on the indigo depths, so it reads in bone; pins for a quarter
+     viewport the moment all fourteen rows are on screen */
+  .pin-sec{ position:relative; }
+  .sec{ padding:8vh 0 20vh; position:sticky; }
   .sec h2{ text-align:center; margin-bottom:9vh; color:var(--ivory); }
   .sec-grid{ display:grid; grid-template-columns:632fr 632fr; column-gap:16px; }
   @media(max-width:900px){ .sec-grid{ grid-template-columns:1fr; } }
@@ -369,8 +373,11 @@
 
       <!-- OPERATOR LOGOS — scroll-scrubbed -->
       <div class="ticker-wrap" id="tickerWrap">
-        <div class="ticker-lead eyebrow reveal">Built &amp; supported by leading AI operators:</div>
-        <div class="marquee reveal" id="marquee"><div class="mtrack" id="mtrack"></div></div>
+        <div class="ticker-pin" id="tickerPin">
+          <div class="ticker-lead eyebrow reveal">Built &amp; supported by leading AI operators:</div>
+          <div class="marquee reveal" id="marquee"><div class="mtrack" id="mtrack"></div></div>
+        </div>
+        <div class="pin-tail25" aria-hidden="true"></div>
       </div>
 
       <!-- HOW WE WORK — sticky video, scrubbed steps -->
@@ -480,6 +487,7 @@
       <div class="vgap" aria-hidden="true"></div>
 
       <!-- SECURITY AND CONTROL -->
+      <div class="pin-sec">
       <section class="sec wrap">
         <h2 class="h2">Security and control.</h2>
         <div class="sec-grid">
@@ -499,6 +507,8 @@
           <div class="sitem reveal"><span class="idx eyebrow">/14</span><span class="txt">Usage, spend and impact for every deployment, in one place.</span></div>
         </div>
       </section>
+      <div class="pin-tail25" aria-hidden="true"></div>
+      </div><!-- /pin-sec -->
 
       <!-- WORK WITH US -->
       <section class="cta wrap">
@@ -681,6 +691,15 @@
     ['op-palantir.svg','Palantir'],['op-mckinsey.svg','McKinsey & Company']                // loop lead-out
   ];
   var marquee=document.getElementById('marquee'), track=document.getElementById('mtrack');
+  var tickerWrap=document.getElementById('tickerWrap'), tickerPin=document.getElementById('tickerPin');
+  var secEl=document.querySelector('.sec');
+  /* sticky offsets: the logo row pins dead-centre; security pins the moment its last row clears the fold */
+  function sizePins(){
+    tickerPin.style.top=Math.round((innerHeight-tickerPin.offsetHeight)/2)+'px';
+    secEl.style.top=Math.round(innerHeight-secEl.offsetHeight)+'px';
+  }
+  sizePins(); addEventListener('resize', sizePins);
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(sizePins);
   LOGOS.forEach(function(l){
     var span=document.createElement('span'); span.className='mlogo';
     var img=document.createElement('img'); img.src='assets/svg/logos/'+l[0]; img.alt=l[1];
@@ -971,9 +990,12 @@
   var howTitle=makeFlowTitle('.how-head h2', null);
   var secTitle=makeFlowTitle('.sec h2', '9vh');
   function runFlowTitle(L, sy, vh, untilY){
-    if(!L.on) L.anchor=elTop(L.el)-140;
-    driveRise(L.inners, inv(sy, L.anchor-vh*0.45, L.anchor));
-    var on=sy>=L.anchor-vh*0.45 && sy<(untilY!==undefined ? untilY : L.anchor);
+    /* flowTop = where the title would render in the flow right now — read live from the
+       spacer while held, so any sticky pinning of the section is accounted for */
+    var flowTop=(L.on ? L.spacer : L.el).getBoundingClientRect().top;
+    driveRise(L.inners, 1 - inv(flowTop, 140, 140+vh*0.45));
+    var on = untilY!==undefined ? (flowTop<=140+vh*0.45 && sy<untilY)
+                                : (flowTop>140 && flowTop<=140+vh*0.45);
     if(on!==L.on){
       if(on){ L.spacer.style.height=L.el.offsetHeight+'px'; L.spacer.style.display='block';
         L.el.style.top='140px'; L.el.classList.add('fheld'); }
@@ -1076,9 +1098,10 @@
       }
     }
 
-    /* logos: first logo on entry, last logo on exit */
-    var mr=marquee.getBoundingClientRect();
-    var lt=clamp((vh-mr.top)/(vh+mr.height),0,1);
+    /* logos: first logo on entry, last logo on exit — driven from document position so
+       the travel keeps flowing while the row pins centred for its quarter-viewport hold */
+    var twTop=elTop(tickerWrap), twH=tickerWrap.offsetHeight;
+    var lt=clamp((sy-(twTop-vh))/(twH+vh),0,1);
     var span=Math.max(0,track.scrollWidth-marquee.clientWidth);
     mx += (-lt*span-mx)*Math.min(1,dt*8);
     track.style.transform='translateX('+mx+'px)';
