@@ -159,7 +159,7 @@
   .how-dither{ position:absolute; inset:0; width:100%; height:100%; z-index:2; pointer-events:none; image-rendering:pixelated; }
 
   /* GALVANISE — locked screen; heading holds 70px under the nav, stage dead-centre */
-  .galv-run{ position:relative; height:300vh; }
+  .galv-run{ position:relative; height:400vh; }   /* the extra runway carries the bracket handoff into the department */
   .galv-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; }
   .galv-headin{ position:absolute; top:140px; left:0; right:0; text-align:center; will-change:transform,opacity; }
   .galv-headin h2{ color:var(--iron); }
@@ -188,7 +188,8 @@
   .names-headin{ position:absolute; left:0; right:0; text-align:center; z-index:2;
     top:140px; will-change:transform,opacity; }                /* same lock as the galvanise heading: 70px under the nav */
   .names-headin h2{ color:var(--iron); }
-  .names-run{ position:relative; height:640vh; }
+  .names-run{ position:relative; height:640vh; margin-top:-100vh; }  /* pins the moment galvanise releases */
+  .names-stick.held{ position:fixed; inset:0; }   /* viewport-locked during the bracket handoff — nothing scrolls in */
   .names-stick{ position:sticky; top:0; height:100vh; overflow:hidden; }
   .names-roll{ position:absolute; left:0; right:0; top:0; text-align:center; will-change:transform; }
   .names-roll .nrow{ font-family:var(--serif); white-space:nowrap; }
@@ -674,11 +675,14 @@
     if(cov===lastHowCov && cov<=0) return;
     lastHowCov=cov;
     if(cov<=0){ hdctx.clearRect(0,0,CW,CH); return; }
-    var f=(window.scrollY + innerHeight*0.5 - elTop(forge))/forge.offsetHeight;
-    var c=forgeColor(f), out=hdctx.createImageData(CW,CH), o=out.data;
+    /* each canvas row takes the gradient's TRUE colour at its screen position, so the
+       finished dither is pixel-identical to the background behind the card */
+    var fTop=elTop(forge), fH=forge.offsetHeight, sy2=window.scrollY, vh2=innerHeight;
+    var out=hdctx.createImageData(CW,CH), o=out.data;
     var base=cov*(1+BIAS);
     for(var y=0;y<CH;y++){
       var thresh=base - BIAS*(1-(y+0.5)/CH);    // bottom rows cover first
+      var c=forgeColor((sy2 + (y+0.5)*vh2/CH - fTop)/fH);
       for(var x=0;x<CW;x++){
         var px=y*CW+x, i4=px*4;
         if(RND[px]<thresh){ o[i4]=c[0]; o[i4+1]=c[1]; o[i4+2]=c[2]; o[i4+3]=255; }
@@ -698,6 +702,8 @@
   /* ---------- galvanise: scrubbed capability list ---------- */
   var galvRun=document.getElementById('galvRun'), galvWindow=document.getElementById('galvWindow');
   var galvList=document.getElementById('galvList');
+  var galvTag=document.querySelector('.galv-tag');
+  var galvBrks=document.querySelectorAll('.galv-frame .brk img');
   var galvItems=Array.prototype.slice.call(galvList.querySelectorAll('li:not(.galv-note)'));
   var rowH=0;
   function measureGalv(){
@@ -708,6 +714,7 @@
   /* ---------- the department: names roll -> wall ---------- */
   var namesHead=document.getElementById('namesHead'), namesRun=document.getElementById('namesRun');
   var namesRoll=document.getElementById('namesRoll'), namesBrk=document.getElementById('namesBrk');
+  var namesStick=document.querySelector('.names-stick'), heldFadeOn=false;
   var knowSection=document.querySelector('.know');
   var ROLL=['Alfred','Stafford','Darby','Jan','Nils','Owen','Becky','Danu','Karl','MacDowell','Nick','Pauline','Stas'];
   var POOL=('Andrei Najwa Dan Warsame Lien Petar Bogdan Zayan Darius Josiah Bethan Dimitar Fadi Levent Kofi Bronagh Yuto Eluned Soraya Sam Peng Jean Jacob Stephen Amaka Vinh Aurel Ankit Uchechi Angus Mahesh Javier Rufus Kacper Wafa Patricia Jian Tuncay Patrice Halima Geedi Tara Femi Sandeep Dorothy Grazyna Elias Issam Max Deborah Ayesha Ernest Imogen Saba Wendy Ethel Penelope Ikenna Kwame Simona Raj Malcolm Saurabh Ehsan Benjamin Antoni Pinar Yuyan Usman Lennox Tolga Kwaku Krystyna Marjorie Shirin Dahir Bushra Sophia Yordanos Hana Shahid Hodan Deqa Tahira Junior Tamara Murat Nisha Akira Frankie Pedro Saad Harry Cyril Dariush Bahram Adnan Kwadwo Quang Anthony Jordan Santiago Temidayo Nathan Chiamaka Damian Kerem Girma Aisling Carolina Iyabo Nida Donna Rhiannon Joe Dennis Kien Robert Indre Beata Tobias Busra Kobina Manoj Haruto Sylwia Gregor Borislav Fares Delroy Finbar Apinya Destiny Ivaylo Bahar Malee Aaron Desislava Cristian Sushma Sonny Huong Ifeanyi Simisola Yuna Amina Craig Sangeeta Kamile Sinan Pradeep Emlyn Dawid Mia Minho Mostafa Princess Paulius Aysel Darren Joanna Qiang Beatriz Radoslaw Danuta Tadeusz Katie Oskar Vida Zeynep Gabriele Isha Huy Yonas Rafael Nasser Setareh Thandiwe Georgi Anong Lihua Joaquin Yana Gerald Andreea Lucy Lachlan Ella Selin Dovydas Jyoti Nala Albie Leonard Elsie Ruta Carmen Nevena Kanya Harold Yusuf Alice Euan Natalie Alfie Matilde Przemyslaw Salman Davide Donghyun Ubah Sylvia Aleksander Cuong Wael Jadwiga Anil Fitsum Yousef Audrey Zbigniew Maciej Owais Norman Hossein Bereket Maya Nia Mahira Riccardo Orla Hande Hazel Efua Zola Henok Richard Nazli Hyun Min Zion Liang Oisin Manuel Aurora Tesfaye Alessia Teddy Minji Ireti Olamide Chloe Carys Kieran Ama Eduardo Fernando Harsh Sian Omolara Niamh Fadumo Federico Stanislaw Roble Carl Precious Kunle Sadia Iraj Ece Mandy Chioma Sheila Rachna Reuben Kalin John Hubert Marek Niran Andrew Olive Zuzanna Rania Shaan Dina Rana Beryl Aadhya Banafsheh Hersi Daiki Christian Harish Dung Deepak Marcin Luke Aoi Emilia Hao Ping Bashir Joshua Esteban Ximena Swati Chibueze Aoife Susan Tiago Matas Laiba Janet Adebola Nam Ade Tushar Hua Karim Naveed Stuart Yumiko Berk Burak Yan Clive Lale Dariusz Maud Kenta Kashif Bilal Hui Lewis Sergio Sevda Parth Herbert Grainne Dragos Egle Emmanuel Abena Krish Hyejin Rahul Hina Quynh Nhung Angharad Parisa Mustafa Winston Xiu Donovan Emma Roy Zaid Shabana Wayne Antonio Hilda Lakshmi Latoya Marcello Pranav Saki Wilfred Komal Bruno Caleb Petya Halina Serkan Mahnoor Omar Kibrom Obianuju Maryam Ruby Shilpa Leo Agnieszka Onur Nadeem Guled Wen Leonardo Yash Micah Rory Senait Timothy Willow Ian Azadeh Cali Arslan Catarina Neha Nora Mahlet Joel Galina Roberto Aderonke Gizem Ladan Efe Ming Cyrus Jamshid Yagiz Ling Rong Victor Malachi Poppy Hoa Tyler Folake Mohsin Sinead Casper Jin Mark Takeshi Svetoslav Lauren Maureen Hung Scott Tendai Salma Ekow Ciprian Hamza Felix Seun Seamus Ronnie Tanisha Matt Lucian Kaito Sorin Tarek Vaida Carol Ugne Mojgan Mehdi Petru Binh Radostina Seoyeon Joanne Bhavna Everton Angelica Ruben Sidney Mudassar Amber Mehmet Francesca Cengiz Rida Edvinas Vincenzo Ines William Arda Gordon Mavis Mishal Gail Walter Keisha Kalina Violet Gergana Clifford Phong Abdiqani Christopher Arash Fang Nicholas Folasade Andrzej Nicola Salvador Devon Nasrin Rahel Areeba Abdullahi Veer Albert Iqra Gloria Mai Holly Viviana Lena Aneurin Firas Gonzalo Lisa Amira Divya Tarik Vasile Walid Zhi Daniela Gareth Wasim Diep Noah Tobi Abdi Cosmin Seren Paula Chiara Elzbieta Graham Cormac Solomon Arthur Nikhil Kabir Ritu Ajay Mehwish Maher Emilija Shoaib Sita Hiroshi Jun Dat Phuong Layla Nanami Temitope Afonso Ignacio Vihaan Jamal Gopal Stefania Mihai Afua Tsvetelina Dinesh Lata Bich Olufemi Valentin Akwasi Farah Kelechi Grace Shota Akash Freddie Seema Danish Jasmine Marlon Aleksandra Idil Aditi Nga Szymon Matilda Khang Isla Aarav Maurice Tao Jaden Hopeton Pooja Isaac Norbert Pietro Eman Jihye Margaret Leroy Otilia Yerin Goitom Karolina Paa Yang Ivy Matthew Viet Ziad Emilio Ahmet Stanley Connor Faraz Tamer Diane Ben Ryo Rehan Lorenzo Barry Vijay Simone Aditya Baris Pushpa Rico Kwesi Caoimhe Sunita Tuan Amit Mona Joaquim Ato Lavinia Eduard Derek Ioana Bartosz Ovidiu Kai Toby Volkan Monika Jose Nneka Linda Yvonne Usha Sami Dexter Kazimierz Lan Rajesh Farida Esi Rhys Ivan Genet Hakan Taemin Isaiah Aamir Hira Siamak Cristiana Faysal Negin Samuel Stefan Elijah Bao Saoirse David Tiana Ifeoma Tigist Sota Cherelle Elif Hieu Clodagh Rebecca Cawil Ffion Ramzi Violeta Trevor Meron Maha Joao Brenda Cansu Cheng Neil Oluwafemi Vivek Cerys Cristina Adwoa Filmon Vernon Raymond Dev Vikram Bozena Merve Stacey Kayode Duc Chinedu Mahad Magdalena Segun Saanvi').split(/\s+/);
@@ -975,6 +982,9 @@
     howCard.style.borderRadius=Math.round(10*(1-g))+'px';
     var howCov=inv(hp,0.86,0.985);
     renderHowDither(howCov);
+    /* once fully covered the card matches the background exactly — hide it so its
+       texture never slides against the fixed noise while the section releases */
+    howCard.style.opacity = howCov>=1 ? '0' : '';
     howCenterEl.style.opacity=1-inv(hp,0.86,0.94);            // the copy dissolves as the dither takes the card
     var seg=Math.min(2.999, inv(hp,0.10,0.86)*3), idx=Math.floor(seg), local2=seg-idx;
     if(idx!==hi){ hi=idx; var s=steps[hi]; howNum.textContent=s[0]; howWord.textContent=s[1]; howBody.textContent=s[2]; }
@@ -983,9 +993,10 @@
     else if(idx<2 && local2>0.9) alpha=Math.max(0,(1-local2)/0.1);
     howStep.style.opacity=alpha; howBody.style.opacity=alpha*0.92;
 
-    /* galvanise: scrub the four capabilities, snapping each into the bracket centre */
+    /* galvanise: scrub the four capabilities, snapping each into the bracket centre;
+       the items complete by 70% of the runway — the rest is the handoff */
     var gt=elTop(galvRun), gp=clamp((sy-gt)/(galvRun.offsetHeight-vh),0,1);
-    var posRaw=gp*(galvItems.length-1);
+    var posRaw=clamp(gp/0.70,0,1)*(galvItems.length-1);
     var pf=Math.floor(posRaw), fr=posRaw-pf;
     var fs=clamp((fr-0.3)/0.4,0,1); fs=fs*fs*(3-2*fs);        // dwell on each item, quick snap between
     var pos=Math.min(pf+fs, galvItems.length-1);
@@ -1001,15 +1012,31 @@
     var ghx=clamp(pos,0,1);
     if(ghx>0){ galvHead.style.transform='translateY('+(-ghx*90)+'px)'; galvHead.style.opacity=1-ghx; }
     else { galvHead.style.removeProperty('transform'); galvHead.style.removeProperty('opacity'); }
+    /* handoff: the galvanise text fades away and its brackets hand over to the names
+       brackets, which start from the exact same geometry */
+    var gm=inv(gp,0.76,0.98); gm=gm*gm*(3-2*gm);
+    if(gp>0.76){
+      var gFade=1-inv(gp,0.76,0.86);
+      galvTag.style.opacity=gFade; galvWindow.style.opacity=gFade;
+      galvBrks.forEach(function(b){ b.style.visibility='hidden'; });
+    } else {
+      galvTag.style.removeProperty('opacity'); galvWindow.style.removeProperty('opacity');
+      galvBrks.forEach(function(b){ b.style.removeProperty('visibility'); });
+    }
 
     /* meet the knowledge: scroll scrubs the four stages while the section holds */
     var kp=clamp((sy-elTop(knowRun))/(knowRun.offsetHeight-vh),0,1);
     var ki=Math.min(3, Math.floor(kp*4));
     if(ki!==kAct && !kSwapping) setKnowStage(ki);
 
-    /* the department: two phases — the roll accelerates into the wall, then the doubled
-       wall streams slowly past the locked brackets and closing headline */
-    var nrp=clamp((sy-elTop(namesRun))/(namesRun.offsetHeight-vh),0,1);
+    /* the department: held viewport-fixed through the bracket handoff, then two phases —
+       the roll accelerates into the wall, then the doubled wall streams slowly past the
+       locked brackets and closing headline */
+    var namesTop=elTop(namesRun);
+    var heldStart=gt + 0.76*(galvRun.offsetHeight - vh);
+    var held=sy>=heldStart && sy<namesTop;
+    namesStick.classList.toggle('held', held);
+    var nrp=clamp((sy-namesTop)/(namesRun.offsetHeight-vh),0,1);
     var first=namesRoll.firstElementChild;
     if(first && nwall){
       var NP1=0.78;                                           // phase split: roll-in / wall crawl
@@ -1021,15 +1048,29 @@
       if(nrp<NP1){ var t1=nrp/NP1; t1=t1*(0.55+0.45*t1); cC=lerp(startC,wallInC,t1); }
       else cC=lerp(wallInC,endC,(nrp-NP1)/(1-NP1));
       namesRoll.style.transform='translateY('+(vh/2-cC)+'px)';
-      /* once the Phuong row reaches them, the brackets part to the screen edges —
-         outer edges on the same 30px margins as the heat counter and the strap —
-         and the closing headline arrives with that same motion, staying on for the
-         whole crawl; at the very end everything fades out in place */
-      var sp=inv(cC, brkSpreadC, brkSpreadC+vh*0.56); sp=sp*sp*(3-2*sp);
+      /* the brackets: during the handoff they morph from the galvanise brackets' exact
+         geometry into their own; later, once the Phuong row reaches them, they part to
+         the screen edges — outer edges on the same 30px margins as the heat counter and
+         the strap — and the closing headline arrives with that motion */
+      var sp=0;
       var bImgL=namesBrk.children[0], bImgR=namesBrk.children[1];
-      var bdx=((innerWidth-(2*bImgL.offsetWidth+Math.min(692, innerWidth*0.52)))/2 - 30)*sp;
-      bImgL.style.transform='translateX('+(-bdx)+'px)';
-      bImgR.style.transform='translateX('+bdx+'px)';
+      if(sy<namesTop && gm<1){
+        if(gm<=0){ bImgL.style.transform=''; bImgR.style.transform=''; }
+        else {
+          var glr=galvBrks[0].getBoundingClientRect(), grr=galvBrks[1].getBoundingClientRect();
+          var ar=(bImgL.naturalWidth||96)/(bImgL.naturalHeight||191);
+          var H2=clamp(96, innerWidth*0.127, 184), w2=H2*ar, bgap0=Math.min(692, innerWidth*0.52);
+          var nlL=innerWidth/2-bgap0/2-w2, nlR=innerWidth/2+bgap0/2, nlT=(vh-H2)/2;
+          bImgL.style.transformOrigin='0 0'; bImgR.style.transformOrigin='0 0';
+          bImgL.style.transform='translate('+lerp(glr.left-nlL,0,gm)+'px,'+lerp(glr.top-nlT,0,gm)+'px) scale('+lerp(glr.height/H2,1,gm)+')';
+          bImgR.style.transform='translate('+lerp(grr.left-nlR,0,gm)+'px,'+lerp(grr.top-nlT,0,gm)+'px) scale('+lerp(grr.height/H2,1,gm)+')';
+        }
+      } else {
+        sp=inv(cC, brkSpreadC, brkSpreadC+vh*0.56); sp=sp*sp*(3-2*sp);
+        var bdx=((innerWidth-(2*bImgL.offsetWidth+Math.min(692, innerWidth*0.52)))/2 - 30)*sp;
+        bImgL.style.transform='translateX('+(-bdx)+'px)';
+        bImgR.style.transform='translateX('+bdx+'px)';
+      }
       var nFadeIn=sp;
       var nFadeOut=1-inv(nrp,0.93,0.985);
       namesFinal.style.opacity=nFadeIn*nFadeOut;
@@ -1040,6 +1081,16 @@
       var nhx=clamp((cC-startC)/rowPitch,0,1);
       if(nhx>0){ namesHead.style.transform='translateY('+(-nhx*90)+'px)'; namesHead.style.opacity=1-nhx; }
       else { namesHead.style.removeProperty('transform'); namesHead.style.removeProperty('opacity'); }
+      /* during the handoff the department simply appears in place: heading and the
+         first name fade in while everything is viewport-locked */
+      if(held){
+        var aF=inv(gp,0.86,0.97);
+        namesHead.style.opacity=aF; namesRoll.style.opacity=aF;
+        heldFadeOn=true;
+      } else if(heldFadeOn){
+        namesHead.style.removeProperty('opacity'); namesRoll.style.removeProperty('opacity');
+        heldFadeOn=false;
+      }
     }
 
     requestAnimationFrame(frame);
