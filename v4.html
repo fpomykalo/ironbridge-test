@@ -1115,7 +1115,7 @@
     galvList.style.transform='translateY('+(-pos*rowH)+'px)';
     for(var gi=0; gi<galvItems.length; gi++){
       var dd=Math.abs(gi-pos);
-      galvItems[gi].style.opacity = dd<0.5 ? 1 : Math.max(0.14, 0.62-0.3*dd);
+      galvItems[gi].style.opacity = dd<0.5 ? 1 : Math.max(0, 0.62-0.21*dd);   // three steps away = fully transparent
     }
     var gnote=galvList.querySelector('.galv-note');
     if(gnote){
