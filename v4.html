@@ -1075,7 +1075,7 @@
         else {
           var glr=galvBrks[0].getBoundingClientRect(), grr=galvBrks[1].getBoundingClientRect();
           var ar=(bImgL.naturalWidth||96)/(bImgL.naturalHeight||191);
-          var H2=clamp(96, innerWidth*0.127, 184), w2=H2*ar, bgap0=Math.min(692, innerWidth*0.52);
+          var H2=clamp(innerWidth*0.127, 96, 184), w2=H2*ar, bgap0=Math.min(692, innerWidth*0.52);
           var nlL=innerWidth/2-bgap0/2-w2, nlR=innerWidth/2+bgap0/2, nlT=(vh-H2)/2;
           bImgL.style.transformOrigin='0 0'; bImgR.style.transformOrigin='0 0';
           bImgL.style.transform='translate('+lerp(glr.left-nlL,0,gm)+'px,'+lerp(glr.top-nlT,0,gm)+'px) scale('+lerp(glr.height/H2,1,gm)+')';
