@@ -53,7 +53,7 @@
     mix-blend-mode:overlay; opacity:.5; }
 
   /* ---------- HERO ---------- */
-  .hero-scroll{ position:relative; height:660vh; z-index:1; }
+  .hero-scroll{ position:relative; height:685vh; z-index:1; }
   .hero-sticky{ position:sticky; top:0; height:100vh; overflow:hidden; }
   #hero-video, #dither, .backdrop{ position:absolute; inset:0; width:100%; height:100%; }
   .backdrop{ background:var(--iron); }
@@ -594,10 +594,10 @@
   var strap=document.getElementById('strap');
   var forge=document.querySelector('.forge');
 
-  /* hero timing: the video scrubs 0..S1; the bone dither then covers the live frame
-     bottom-up and fully lands by p=0.875, before the content sheet overlaps at ~0.89.
-     S1 sits late enough that the headline and footage hold a full extra beat first */
-  var S1=0.75, DEND=0.875;
+  /* hero timing: the video scrubs 0..S1, then the final frame and headline hold for a
+     quarter viewport before the bone dither (DSTART..DEND) covers the live frame
+     bottom-up — landing before the content sheet overlaps at ~0.90 */
+  var S1=0.718, DSTART=0.761, DEND=0.880;
   var duration=10, targetTime=0, seeking=false;
   video.addEventListener('loadedmetadata', function(){ duration=video.duration||10; try{ video.currentTime=0; }catch(e){} });
   video.addEventListener('seeked', function(){ seeking=false; });
@@ -635,7 +635,7 @@
   }
   var lastForgeF=-1;
   function chromeTarget(p){
-    if(p<0.999){ lastForgeF=-1; return 1 - inv(p,S1,0.90); }  // hero: ivory over footage, iron once the bone dither lands
+    if(p<0.999){ lastForgeF=-1; return 1 - inv(p,DSTART,0.92); }  // hero: ivory over footage, iron once the bone dither lands
     var f=(window.scrollY + innerHeight*0.5 - elTop(forge))/forge.offsetHeight;
     lastForgeF=f;
     return forgeLum(f) > 0.44 ? 0 : 1;                         // light bg -> iron chrome, dark bg -> ivory chrome
@@ -1002,7 +1002,7 @@
 
     /* hero: the video scrubs with the scroll; bone dots accumulate over the live
        frame bottom-up at the end — the footage itself is never pixelated */
-    renderHeroDither(inv(p,S1,DEND));
+    renderHeroDither(inv(p,DSTART,DEND));
     targetTime = inv(p,0.02,S1)*duration;
     if(video.readyState>=1 && !seeking && isFinite(targetTime) && Math.abs(video.currentTime-targetTime)>0.01){
       seeking=true; try{ video.currentTime=targetTime; }catch(e){} }
