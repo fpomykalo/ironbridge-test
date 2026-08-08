@@ -41,6 +41,7 @@
   .w{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.14em; line-height:1; }
   .wi{ display:inline-block; will-change:transform; transform:translateY(115%); }
   .rline{ display:block; }
+  .rline + .rline{ margin-top:-10px; }                        /* h2-scale titles sit 10px tighter between lines */
   .fheld{ position:fixed; left:0; right:0; z-index:2; }       /* flow titles locked at their final spot while revealing */
   .vgap{ height:50vh; }
   .vgap-q{ height:25vh; }
@@ -1105,7 +1106,11 @@
       galvItems[gi].style.opacity = dd<0.5 ? 1 : Math.max(0.14, 0.62-0.3*dd);
     }
     var gnote=galvList.querySelector('.galv-note');
-    if(gnote) gnote.style.opacity=inv(pos, 2.3, 2.95);        // note rises in with New business only
+    if(gnote){
+      gnote.style.opacity=inv(pos, 2.3, 2.95);                // note rises in with New business only
+      var gwr=galvWindow.getBoundingClientRect();             // the frame sits right of centre — recentre the note to the screen
+      gnote.style.transform='translateX('+Math.round(innerWidth/2-(gwr.left+gwr.width/2))+'px)';
+    }
     /* heading leaves with the first snap: rises and fades exactly as Finance -> Operations */
     var ghx=clamp(pos,0,1);
     if(ghx>0){ galvHead.style.transform='translateY('+(-ghx*90)+'px)'; galvHead.style.opacity=1-ghx; }
