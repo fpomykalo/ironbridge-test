@@ -37,6 +37,10 @@
   .eyebrow{ font-family:var(--sans); font-weight:700; font-size:8px; line-height:10px; letter-spacing:1.6px; text-transform:uppercase; }
   .h2{ font-family:var(--serif); font-weight:400; font-size:var(--fs-h2); line-height:1; letter-spacing:0; }
   .body{ font-family:var(--sans); font-weight:400; font-size:14px; line-height:20px; }
+  /* word-rise reveal (shared by the statement and every big title) */
+  .w{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.14em; line-height:1; }
+  .wi{ display:inline-block; will-change:transform; transform:translateY(115%); }
+  .rline{ display:block; }
 
   /* noise overlay: ONE viewport-fixed layer over the whole page — a single tile, so it
      never repeats, never seams between sections, and holds still while you scroll */
@@ -200,7 +204,7 @@
   .names-brk{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     gap:min(692px, 52vw); pointer-events:none; }
   .names-brk img{ height:clamp(96px, 12.7vw, 184px); width:auto; display:block; }
-  .names-final{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
+  .names-final{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
     font-family:var(--serif); font-weight:400; font-size:var(--fs-h2); line-height:1; color:var(--ivory);
     opacity:0; pointer-events:none; }
 
@@ -278,6 +282,7 @@
   .foot .brk{ position:absolute; top:50%; transform:translateY(-50%); height:170px; width:auto; opacity:.92; }
   .foot .brk.l{ left:-110px; } .foot .brk.r{ right:-110px; }
   .foot .brk img{ height:100%; width:auto; display:block; }
+  .foot .ft-lines{ display:inline-block; }
   @media(max-width:820px){ .foot .brk{ display:none; } }
   .foot .links{ margin-top:64px; display:flex; flex-direction:column; gap:10px; align-items:center; }
   .foot .links a{ color:var(--ivory); text-decoration:none; font-weight:700; font-size:8px; line-height:10px; letter-spacing:1.6px; text-transform:uppercase; }
@@ -385,7 +390,7 @@
       <!-- GALVANISE — sticky stage, scrubbed capability list -->
       <div class="galv-run" id="galvRun">
         <div class="galv-stick">
-          <div class="galv-headin" id="galvHead"><h2 class="h2 reveal">Galvanise change across your firm.</h2></div>
+          <div class="galv-headin" id="galvHead"><h2 class="h2">Galvanise change across your firm.</h2></div>
           <div class="galv-inner">
             <div class="galv-tag reveal">Your AI Department
               <span class="gplus"><img src="assets/svg/plus_dark.svg" alt="+"></span>
@@ -424,7 +429,7 @@
       <div class="know-stick">
       <section class="know wrap">
         <div class="know-head">
-          <h2 class="h2 reveal">Meet the Knowledge.</h2>
+          <h2 class="h2">Meet the Knowledge.</h2>
           <p class="sub reveal">A living map of what your firm knows, brought together in one secure place, kept yours, and put to work.</p>
         </div>
         <div class="know-grid">
@@ -487,9 +492,9 @@
     <!-- FOOTER — the gradient runs to its end beneath it -->
     <footer class="foot">
       <div class="inner">
-        <div class="ftag reveal">
+        <div class="ftag">
           <span class="brk l"><img src="assets/svg/bracket_light_left.svg" alt=""></span>
-          The AI department<br>for the everyday economy.
+          <span class="ft-lines">The AI department<br>for the everyday economy.</span>
           <span class="brk r"><img src="assets/svg/bracket_light_right.svg" alt=""></span>
         </div>
         <div class="links reveal">
@@ -893,6 +898,38 @@
     }, 520);
   }
 
+  /* ---------- word-rise titles: the department heading's reveal, shared ---------- */
+  function riseify(el){
+    var inners=[], lines=el.innerHTML.split(/<br\s*\/?>/i);
+    el.innerHTML='';
+    lines.forEach(function(lineText){
+      var line=document.createElement('span'); line.className='rline';
+      var tmp=document.createElement('div'); tmp.innerHTML=lineText;
+      var words=(tmp.textContent||'').trim().split(/\s+/).filter(Boolean);
+      words.forEach(function(w,i){
+        var m=document.createElement('span'); m.className='w';
+        var inr=document.createElement('span'); inr.className='wi'; inr.textContent=w;
+        m.appendChild(inr); line.appendChild(m);
+        if(i<words.length-1) line.appendChild(document.createTextNode(' '));
+        inners.push(inr);
+      });
+      el.appendChild(line);
+    });
+    return inners;
+  }
+  function driveRise(inners, q){
+    var T=0.35*(inners.length-1)+1, tl=q*T;
+    for(var i=0;i<inners.length;i++){
+      var lo=clamp((tl-0.35*i)/1,0,1);
+      inners[i].style.transform='translateY('+(115*(1-pow3out(lo)))+'%)';
+    }
+  }
+  var galvHeadInners=riseify(document.querySelector('#galvHead h2'));
+  var knowHeadInners=riseify(document.querySelector('.know-head h2'));
+  var finalInners=riseify(namesFinal);
+  var ftagInners=riseify(document.querySelector('.ftag .ft-lines'));
+  if(REDUCE) [].concat(galvHeadInners,knowHeadInners,finalInners,ftagInners).forEach(function(s){ s.style.transform='translateY(0%)'; });
+
   /* ---------- heat labels ---------- */
   function heatLabelFor(t){
     if(t>1100) return 'White heat';
@@ -1087,9 +1124,8 @@
         bImgL.style.transform='translateX('+(-bdx)+'px)';
         bImgR.style.transform='translateX('+bdx+'px)';
       }
-      var nFadeIn=sp;
       var nFadeOut=1-inv(nrp,0.93,0.985);
-      namesFinal.style.opacity=nFadeIn*nFadeOut;
+      namesFinal.style.opacity=nFadeOut;                      // the words themselves rise in with the spread
       if(nFadeOut<1) namesBrk.style.opacity=nFadeOut;
       else namesBrk.style.removeProperty('opacity');
       /* heading leaves as Alfred hands over to the next name — same rise-and-fade as galvanise */
@@ -1108,6 +1144,17 @@
           nhInners[wi2].style.transform='translateY('+(115*(1-pow3out(lw)))+'%)';
         }
       } else nhInners.forEach(function(s){ s.style.transform='translateY(0%)'; });
+    }
+
+    /* word-rise titles: each completes exactly as its stage locks (or, for the closing
+       headline, rides the bracket spread; for the footer, the tagline's own arrival) */
+    if(!REDUCE){
+      driveRise(galvHeadInners, inv(sy, gt - vh*0.45, gt));
+      var kt=elTop(knowRun);
+      driveRise(knowHeadInners, inv(sy, kt - vh*0.45, kt));
+      driveRise(finalInners, sp||0);
+      var footTop=elTop(footEl);
+      driveRise(ftagInners, inv(sy, footTop - vh*0.55, footTop - vh*0.08));
     }
 
     requestAnimationFrame(frame);
