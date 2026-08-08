@@ -138,9 +138,10 @@
   .stmt-h .w{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.14em; line-height:1; }
   .stmt-h .wi{ display:inline-block; will-change:transform; transform:translateY(115%); }
 
-  /* LOGOS — scroll-scrubbed horizontal travel; the row pins centred for a quarter viewport */
+  /* LOGOS — scroll-scrubbed horizontal travel; the block rides a 50% parallax so it
+     lingers on screen while the page moves past it */
   .ticker-wrap{ padding:4vh 0 22vh; }
-  .ticker-pin{ position:sticky; }
+  .ticker-pin{ will-change:transform; }
   .pin-tail25{ height:25vh; }
   .ticker-lead{ text-align:center; color:var(--iron); opacity:.9; margin-bottom:42px; }
   .marquee{ overflow:hidden; width:100%; }
@@ -377,7 +378,6 @@
           <div class="ticker-lead eyebrow reveal">Built &amp; supported by leading AI operators:</div>
           <div class="marquee reveal" id="marquee"><div class="mtrack" id="mtrack"></div></div>
         </div>
-        <div class="pin-tail25" aria-hidden="true"></div>
       </div>
 
       <!-- HOW WE WORK — sticky video, scrubbed steps -->
@@ -693,10 +693,10 @@
   var marquee=document.getElementById('marquee'), track=document.getElementById('mtrack');
   var tickerWrap=document.getElementById('tickerWrap'), tickerPin=document.getElementById('tickerPin');
   var secEl=document.querySelector('.sec');
-  /* sticky offsets: the logo row pins dead-centre; security pins the moment its last row clears the fold */
+  /* sticky offset: security pins with its title still at the arrival position (140px
+     under the nav) — all fourteen rows are on screen there too */
   function sizePins(){
-    tickerPin.style.top=Math.round((innerHeight-tickerPin.offsetHeight)/2)+'px';
-    secEl.style.top=Math.round(innerHeight-secEl.offsetHeight)+'px';
+    secEl.style.top=Math.round(140 - parseFloat(getComputedStyle(secEl).paddingTop))+'px';
   }
   sizePins(); addEventListener('resize', sizePins);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(sizePins);
@@ -1105,6 +1105,8 @@
     var span=Math.max(0,track.scrollWidth-marquee.clientWidth);
     mx += (-lt*span-mx)*Math.min(1,dt*8);
     track.style.transform='translateX('+mx+'px)';
+    /* 50% parallax: the block scrolls at half the page's speed, zeroed when centred */
+    tickerPin.style.transform='translateY('+Math.round((sy-(elTop(tickerPin)+tickerPin.offsetHeight/2-vh/2))*0.5)+'px)';
 
     /* how we work: the card starts growing while it approaches, fills the screen,
        the steps scrub full-bleed, then it dithers away bottom-up and slides off */
