@@ -168,13 +168,13 @@
   .galv-tag .gplus{ display:inline-flex; width:17px; height:17px; }
   .galv-tag .gplus img{ width:17px; height:17px; display:block; }
   .galv-frame{ position:relative; display:flex; align-items:center; gap:16px; }
-  .galv-frame .brk{ height:clamp(80px,9.2vw,132px); width:auto; flex:none; }
+  .galv-frame .brk{ height:clamp(96px,12.7vw,184px); width:auto; flex:none; }  /* same size as the department brackets — the handoff is position-only */
   .galv-frame .brk img{ height:100%; width:auto; display:block; }
   .galv-window{ position:relative; overflow:visible; }
   .galv-list{ list-style:none; text-align:left; will-change:transform; }
   .galv-list li{ font-family:var(--serif); font-size:var(--fs-list); line-height:1.1; white-space:nowrap; color:var(--ivory); }
   .galv-list .galv-note{ font-family:var(--sans); max-width:38ch; margin-top:70px;
-    margin-left:calc(-16px - clamp(40px, 4.6vw, 66px)); /* flush with the left bracket's outer edge */
+    margin-left:calc(-16px - clamp(48px, 6.39vw, 92px)); /* flush with the left bracket's outer edge */
     font-size:20px; line-height:24px; color:var(--iron); white-space:normal; }
   .galv-note b{ display:block; font-weight:400; margin-bottom:20px; }
   @media(max-width:900px){
@@ -188,6 +188,8 @@
   .names-headin{ position:absolute; left:0; right:0; text-align:center; z-index:2;
     top:140px; will-change:transform,opacity; }                /* same lock as the galvanise heading: 70px under the nav */
   .names-headin h2{ color:var(--iron); }
+  .names-headin h2 .w{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.14em; line-height:1; }
+  .names-headin h2 .wi{ display:inline-block; will-change:transform; transform:translateY(115%); }
   .names-run{ position:relative; height:640vh; margin-top:-100vh; }  /* pins the moment galvanise releases */
   .names-stick.held{ position:fixed; inset:0; }   /* viewport-locked during the bracket handoff — nothing scrolls in */
   .names-stick{ position:sticky; top:0; height:100vh; overflow:hidden; }
@@ -408,11 +410,11 @@
       <div class="names-run" id="namesRun">
         <div class="names-stick">
           <div class="names-roll" id="namesRoll"></div>
-          <div class="names-brk reveal" id="namesBrk">
+          <div class="names-brk" id="namesBrk">
             <img src="assets/svg/bracket_dark_left.svg" alt="">
             <img src="assets/svg/bracket_dark_right.svg" alt="">
           </div>
-          <div class="names-headin reveal" id="namesHead"><h2 class="h2">Meet your new AI Department.</h2></div>
+          <div class="names-headin" id="namesHead"><h2 class="h2">Meet your new AI Department.</h2></div>
           <div class="names-final" id="namesFinal">To unlock more of<br>what makes us human.</div>
         </div>
       </div>
@@ -715,6 +717,20 @@
   var namesHead=document.getElementById('namesHead'), namesRun=document.getElementById('namesRun');
   var namesRoll=document.getElementById('namesRoll'), namesBrk=document.getElementById('namesBrk');
   var namesStick=document.querySelector('.names-stick'), heldFadeOn=false;
+  /* the department heading gets the statement's word-by-word clip-rise */
+  var nhInners=[];
+  (function(){
+    var h=namesHead.querySelector('h2');
+    var words=h.textContent.trim().split(/\s+/);
+    h.textContent='';
+    words.forEach(function(w,i){
+      var m=document.createElement('span'); m.className='w';
+      var inr=document.createElement('span'); inr.className='wi'; inr.textContent=w;
+      m.appendChild(inr); h.appendChild(m);
+      if(i<words.length-1) h.appendChild(document.createTextNode(' '));
+      nhInners.push(inr);
+    });
+  })();
   var knowSection=document.querySelector('.know');
   var ROLL=['Alfred','Stafford','Darby','Jan','Nils','Owen','Becky','Danu','Karl','MacDowell','Nick','Pauline','Stas'];
   var POOL=('Andrei Najwa Dan Warsame Lien Petar Bogdan Zayan Darius Josiah Bethan Dimitar Fadi Levent Kofi Bronagh Yuto Eluned Soraya Sam Peng Jean Jacob Stephen Amaka Vinh Aurel Ankit Uchechi Angus Mahesh Javier Rufus Kacper Wafa Patricia Jian Tuncay Patrice Halima Geedi Tara Femi Sandeep Dorothy Grazyna Elias Issam Max Deborah Ayesha Ernest Imogen Saba Wendy Ethel Penelope Ikenna Kwame Simona Raj Malcolm Saurabh Ehsan Benjamin Antoni Pinar Yuyan Usman Lennox Tolga Kwaku Krystyna Marjorie Shirin Dahir Bushra Sophia Yordanos Hana Shahid Hodan Deqa Tahira Junior Tamara Murat Nisha Akira Frankie Pedro Saad Harry Cyril Dariush Bahram Adnan Kwadwo Quang Anthony Jordan Santiago Temidayo Nathan Chiamaka Damian Kerem Girma Aisling Carolina Iyabo Nida Donna Rhiannon Joe Dennis Kien Robert Indre Beata Tobias Busra Kobina Manoj Haruto Sylwia Gregor Borislav Fares Delroy Finbar Apinya Destiny Ivaylo Bahar Malee Aaron Desislava Cristian Sushma Sonny Huong Ifeanyi Simisola Yuna Amina Craig Sangeeta Kamile Sinan Pradeep Emlyn Dawid Mia Minho Mostafa Princess Paulius Aysel Darren Joanna Qiang Beatriz Radoslaw Danuta Tadeusz Katie Oskar Vida Zeynep Gabriele Isha Huy Yonas Rafael Nasser Setareh Thandiwe Georgi Anong Lihua Joaquin Yana Gerald Andreea Lucy Lachlan Ella Selin Dovydas Jyoti Nala Albie Leonard Elsie Ruta Carmen Nevena Kanya Harold Yusuf Alice Euan Natalie Alfie Matilde Przemyslaw Salman Davide Donghyun Ubah Sylvia Aleksander Cuong Wael Jadwiga Anil Fitsum Yousef Audrey Zbigniew Maciej Owais Norman Hossein Bereket Maya Nia Mahira Riccardo Orla Hande Hazel Efua Zola Henok Richard Nazli Hyun Min Zion Liang Oisin Manuel Aurora Tesfaye Alessia Teddy Minji Ireti Olamide Chloe Carys Kieran Ama Eduardo Fernando Harsh Sian Omolara Niamh Fadumo Federico Stanislaw Roble Carl Precious Kunle Sadia Iraj Ece Mandy Chioma Sheila Rachna Reuben Kalin John Hubert Marek Niran Andrew Olive Zuzanna Rania Shaan Dina Rana Beryl Aadhya Banafsheh Hersi Daiki Christian Harish Dung Deepak Marcin Luke Aoi Emilia Hao Ping Bashir Joshua Esteban Ximena Swati Chibueze Aoife Susan Tiago Matas Laiba Janet Adebola Nam Ade Tushar Hua Karim Naveed Stuart Yumiko Berk Burak Yan Clive Lale Dariusz Maud Kenta Kashif Bilal Hui Lewis Sergio Sevda Parth Herbert Grainne Dragos Egle Emmanuel Abena Krish Hyejin Rahul Hina Quynh Nhung Angharad Parisa Mustafa Winston Xiu Donovan Emma Roy Zaid Shabana Wayne Antonio Hilda Lakshmi Latoya Marcello Pranav Saki Wilfred Komal Bruno Caleb Petya Halina Serkan Mahnoor Omar Kibrom Obianuju Maryam Ruby Shilpa Leo Agnieszka Onur Nadeem Guled Wen Leonardo Yash Micah Rory Senait Timothy Willow Ian Azadeh Cali Arslan Catarina Neha Nora Mahlet Joel Galina Roberto Aderonke Gizem Ladan Efe Ming Cyrus Jamshid Yagiz Ling Rong Victor Malachi Poppy Hoa Tyler Folake Mohsin Sinead Casper Jin Mark Takeshi Svetoslav Lauren Maureen Hung Scott Tendai Salma Ekow Ciprian Hamza Felix Seun Seamus Ronnie Tanisha Matt Lucian Kaito Sorin Tarek Vaida Carol Ugne Mojgan Mehdi Petru Binh Radostina Seoyeon Joanne Bhavna Everton Angelica Ruben Sidney Mudassar Amber Mehmet Francesca Cengiz Rida Edvinas Vincenzo Ines William Arda Gordon Mavis Mishal Gail Walter Keisha Kalina Violet Gergana Clifford Phong Abdiqani Christopher Arash Fang Nicholas Folasade Andrzej Nicola Salvador Devon Nasrin Rahel Areeba Abdullahi Veer Albert Iqra Gloria Mai Holly Viviana Lena Aneurin Firas Gonzalo Lisa Amira Divya Tarik Vasile Walid Zhi Daniela Gareth Wasim Diep Noah Tobi Abdi Cosmin Seren Paula Chiara Elzbieta Graham Cormac Solomon Arthur Nikhil Kabir Ritu Ajay Mehwish Maher Emilija Shoaib Sita Hiroshi Jun Dat Phuong Layla Nanami Temitope Afonso Ignacio Vihaan Jamal Gopal Stefania Mihai Afua Tsvetelina Dinesh Lata Bich Olufemi Valentin Akwasi Farah Kelechi Grace Shota Akash Freddie Seema Danish Jasmine Marlon Aleksandra Idil Aditi Nga Szymon Matilda Khang Isla Aarav Maurice Tao Jaden Hopeton Pooja Isaac Norbert Pietro Eman Jihye Margaret Leroy Otilia Yerin Goitom Karolina Paa Yang Ivy Matthew Viet Ziad Emilio Ahmet Stanley Connor Faraz Tamer Diane Ben Ryo Rehan Lorenzo Barry Vijay Simone Aditya Baris Pushpa Rico Kwesi Caoimhe Sunita Tuan Amit Mona Joaquim Ato Lavinia Eduard Derek Ioana Bartosz Ovidiu Kai Toby Volkan Monika Jose Nneka Linda Yvonne Usha Sami Dexter Kazimierz Lan Rajesh Farida Esi Rhys Ivan Genet Hakan Taemin Isaiah Aamir Hira Siamak Cristiana Faysal Negin Samuel Stefan Elijah Bao Saoirse David Tiana Ifeoma Tigist Sota Cherelle Elif Hieu Clodagh Rebecca Cawil Ffion Ramzi Violeta Trevor Meron Maha Joao Brenda Cansu Cheng Neil Oluwafemi Vivek Cerys Cristina Adwoa Filmon Vernon Raymond Dev Vikram Bozena Merve Stacey Kayode Duc Chinedu Mahad Magdalena Segun Saanvi').split(/\s+/);
@@ -1081,16 +1097,17 @@
       var nhx=clamp((cC-startC)/rowPitch,0,1);
       if(nhx>0){ namesHead.style.transform='translateY('+(-nhx*90)+'px)'; namesHead.style.opacity=1-nhx; }
       else { namesHead.style.removeProperty('transform'); namesHead.style.removeProperty('opacity'); }
-      /* during the handoff the department simply appears in place: heading and the
-         first name fade in while everything is viewport-locked */
-      if(held){
-        var aF=inv(gp,0.86,0.97);
-        namesHead.style.opacity=aF; namesRoll.style.opacity=aF;
-        heldFadeOn=true;
-      } else if(heldFadeOn){
-        namesHead.style.removeProperty('opacity'); namesRoll.style.removeProperty('opacity');
-        heldFadeOn=false;
-      }
+      /* during the handoff the department appears in place: the first name fades in and
+         the heading's words rise with the scrub, exactly like the opening statement */
+      if(held){ namesRoll.style.opacity=inv(gp,0.86,0.97); heldFadeOn=true; }
+      else if(heldFadeOn){ namesRoll.style.removeProperty('opacity'); heldFadeOn=false; }
+      if(!REDUCE){
+        var nq=inv(gp,0.84,0.995)*(0.35*(nhInners.length-1)+1);
+        for(var wi2=0; wi2<nhInners.length; wi2++){
+          var lw=clamp((nq-0.35*wi2)/1,0,1);
+          nhInners[wi2].style.transform='translateY('+(115*(1-pow3out(lw)))+'%)';
+        }
+      } else nhInners.forEach(function(s){ s.style.transform='translateY(0%)'; });
     }
 
     requestAnimationFrame(frame);
