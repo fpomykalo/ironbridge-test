@@ -43,6 +43,7 @@
   .rline{ display:block; }
   .fheld{ position:fixed; left:0; right:0; z-index:2; }       /* flow titles locked at their final spot while revealing */
   .vgap{ height:50vh; }
+  .vgap-q{ height:25vh; }
 
   /* noise overlay: ONE viewport-fixed layer over the whole page — a single tile, so it
      never repeats, never seams between sections, and holds still while you scroll */
@@ -281,7 +282,7 @@
   .foot{ position:relative; background:transparent; color:var(--ivory); min-height:100vh;
     display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; }
   .foot-wave{ position:absolute; left:0; bottom:0; width:100%; height:100%; pointer-events:none; display:block; }
-  .foot .inner{ position:relative; z-index:1; max-width:1004px; margin:0 auto; padding:0 40px; text-align:center; }
+  .foot .inner{ position:relative; z-index:1; max-width:1004px; margin:100px auto 0; padding:0 40px; text-align:center; }  /* flex-centring halves the margin: the block sits 50px below centre */
   .foot .ftag{ position:relative; display:inline-block; font-family:var(--serif); font-weight:400;
     font-size:var(--fs-h2); line-height:1; letter-spacing:0; }
   .foot .brk{ position:absolute; top:50%; transform:translateY(-50%); height:170px; width:auto; opacity:.92; overflow:hidden; }
@@ -368,6 +369,7 @@
       </div>
 
       <!-- HOW WE WORK — sticky video, scrubbed steps -->
+      <div class="vgap-q" aria-hidden="true"></div>
       <div class="how-head wrap"><h2 class="h2">How we work.</h2></div>
       <div class="how-run" id="howRun">
         <div class="how-stick">
@@ -670,7 +672,8 @@
     ['op-palantir.svg','Palantir'],['op-mckinsey.svg','McKinsey & Company'],['op-jpmorgan.svg','J.P. Morgan'],
     ['op-cabinet-office.svg','Cabinet Office'],['op-paypal.svg','PayPal'],['op-bcg.svg','BCG'],['op-meta.svg','Meta'],
     ['op-bloomberg.svg','Bloomberg'],['op-openai.svg','OpenAI'],['op-deepmind.svg','DeepMind'],['op-google.svg','Google'],
-    ['op-microsoft.svg','Microsoft'],['op-lovable.svg','Lovable'],['op-huggingface.svg','Hugging Face']
+    ['op-microsoft.svg','Microsoft'],['op-lovable.svg','Lovable'],['op-huggingface.svg','Hugging Face'],
+    ['op-palantir.svg','Palantir'],['op-mckinsey.svg','McKinsey & Company']                // loop lead-out
   ];
   var marquee=document.getElementById('marquee'), track=document.getElementById('mtrack');
   LOGOS.forEach(function(l){
