@@ -145,7 +145,7 @@
   .mlogo.txt{ font-family:var(--serif); font-size:26px; line-height:1; color:var(--iron); opacity:.9; white-space:nowrap; }
 
   /* HOW WE WORK — sticky card, scroll-scrubbed steps */
-  .how-head{ padding:6vh 0 0; margin-bottom:100px; text-align:center; z-index:3; }  /* above the card so the title visibly scrolls off over the video */
+  .how-head{ padding:6vh 0 0; margin-bottom:100px; text-align:center; }  /* under the card — the growing video covers the held title */
   .how-head h2{ color:var(--iron); }
   .how-run{ position:relative; height:320vh; }
   .how-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; }
@@ -962,10 +962,10 @@
   }
   var howTitle=makeFlowTitle('.how-head h2', null);
   var secTitle=makeFlowTitle('.sec h2', '9vh');
-  function runFlowTitle(L, sy, vh){
+  function runFlowTitle(L, sy, vh, untilY){
     if(!L.on) L.anchor=elTop(L.el)-140;
     driveRise(L.inners, inv(sy, L.anchor-vh*0.45, L.anchor));
-    var on=sy>=L.anchor-vh*0.45 && sy<L.anchor;
+    var on=sy>=L.anchor-vh*0.45 && sy<(untilY!==undefined ? untilY : L.anchor);
     if(on!==L.on){
       if(on){ L.spacer.style.height=L.el.offsetHeight+'px'; L.spacer.style.display='block';
         L.el.style.top='140px'; L.el.classList.add('fheld'); }
@@ -1217,7 +1217,11 @@
         kHeldOn=kHeld;
       }
       driveRise(finalInners, sp||0);
-      runFlowTitle(howTitle, sy, vh);
+      /* "How we work." never scrolls: it holds its spot while the video card grows over
+         it, and quietly fades so it is gone when the card later dithers away */
+      runFlowTitle(howTitle, sy, vh, ht + 0.9*(howRun.offsetHeight - vh));
+      if(howTitle.on) howTitle.el.style.opacity=1-inv(hp,0.55,0.75);
+      else howTitle.el.style.removeProperty('opacity');
       runFlowTitle(secTitle, sy, vh);
       var footTop=elTop(footEl);
       var fq=inv(sy, footTop - vh*0.55, footTop - vh*0.08);
