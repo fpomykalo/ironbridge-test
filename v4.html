@@ -166,6 +166,7 @@
   .galv-run{ position:relative; height:400vh; }   /* the extra runway carries the bracket handoff into the department */
   .galv-stick{ position:sticky; top:0; height:100vh; display:flex; align-items:center; justify-content:center; }
   .galv-headin{ position:absolute; top:140px; left:0; right:0; text-align:center; will-change:transform,opacity; }
+  .galv-headin.held{ position:fixed; }                        /* locked at its final spot while the stage scrolls in beneath */
   .galv-headin h2{ color:var(--iron); }
   .galv-inner{ position:relative; display:flex; align-items:center; justify-content:center; gap:16px; max-width:calc(100vw - 40px); }
   .galv-tag{ display:flex; align-items:center; gap:16px; font-family:var(--sans); font-weight:700; font-size:clamp(20px,2.5vw,36px); line-height:1; color:var(--iron); white-space:nowrap; z-index:2; }
@@ -213,6 +214,7 @@
   .know-stick{ position:sticky; top:0; height:100vh; display:flex; flex-direction:column; justify-content:center; }
   .know{ padding-top:0; padding-bottom:0; width:100%; }   /* auto margins suppress flex stretch — force full width */
   .know-head{ text-align:center; margin-bottom:6vh; }
+  .know-head.held{ position:fixed; left:0; right:0; z-index:2; margin-bottom:0; }
   @media(max-width:900px){
     .know-run{ height:auto; }
     .know-stick{ position:static; height:auto; }
@@ -283,6 +285,7 @@
   .foot .brk.l{ left:-110px; } .foot .brk.r{ right:-110px; }
   .foot .brk img{ height:100%; width:auto; display:block; }
   .foot .ft-lines{ display:inline-block; }
+  .foot .ftag.held{ position:fixed; left:50%; transform:translateX(-50%); z-index:2; }
   @media(max-width:820px){ .foot .brk{ display:none; } }
   .foot .links{ margin-top:64px; display:flex; flex-direction:column; gap:10px; align-items:center; }
   .foot .links a{ color:var(--ivory); text-decoration:none; font-weight:700; font-size:8px; line-height:10px; letter-spacing:1.6px; text-transform:uppercase; }
@@ -929,6 +932,13 @@
   var finalInners=riseify(namesFinal);
   var ftagInners=riseify(document.querySelector('.ftag .ft-lines'));
   if(REDUCE) [].concat(galvHeadInners,knowHeadInners,finalInners,ftagInners).forEach(function(s){ s.style.transform='translateY(0%)'; });
+  /* in-flow titles get placeholder spacers so locking them steals no layout */
+  var knowHeadEl=document.querySelector('.know-head'), ftagEl=document.querySelector('.ftag');
+  var kHeldOn=false, fHeldOn=false;
+  var knowHeadSpacer=document.createElement('div'); knowHeadSpacer.style.display='none'; knowHeadSpacer.style.marginBottom='6vh';
+  knowHeadEl.parentNode.insertBefore(knowHeadSpacer, knowHeadEl.nextSibling);
+  var ftagSpacer=document.createElement('div'); ftagSpacer.style.display='none';
+  ftagEl.parentNode.insertBefore(ftagSpacer, ftagEl.nextSibling);
 
   /* ---------- heat labels ---------- */
   function heatLabelFor(t){
@@ -1146,15 +1156,40 @@
       } else nhInners.forEach(function(s){ s.style.transform='translateY(0%)'; });
     }
 
-    /* word-rise titles: each completes exactly as its stage locks (or, for the closing
-       headline, rides the bracket spread; for the footer, the tagline's own arrival) */
+    /* word-rise titles: each is viewport-locked at its final position while its section
+       scrolls up beneath, words rising in place; flow resumes exactly at the pin */
     if(!REDUCE){
       driveRise(galvHeadInners, inv(sy, gt - vh*0.45, gt));
+      galvHead.classList.toggle('held', sy>=gt-vh*0.45 && sy<gt);
       var kt=elTop(knowRun);
       driveRise(knowHeadInners, inv(sy, kt - vh*0.45, kt));
+      var kHeld=sy>=kt-vh*0.45 && sy<kt;
+      if(kHeld!==kHeldOn){
+        if(kHeld){
+          var kTop=knowHeadEl.getBoundingClientRect().height, kFinal=elTop(knowHeadEl)-kt;
+          knowHeadSpacer.style.height=kTop+'px'; knowHeadSpacer.style.display='block';
+          knowHeadEl.style.top=kFinal+'px'; knowHeadEl.classList.add('held');
+        } else {
+          knowHeadEl.classList.remove('held'); knowHeadEl.style.removeProperty('top');
+          knowHeadSpacer.style.display='none';
+        }
+        kHeldOn=kHeld;
+      }
       driveRise(finalInners, sp||0);
       var footTop=elTop(footEl);
       driveRise(ftagInners, inv(sy, footTop - vh*0.55, footTop - vh*0.08));
+      var fHeld=sy>=footTop-vh*0.55 && sy<footTop-1;
+      if(fHeld!==fHeldOn){
+        if(fHeld){
+          var fFinal=elTop(ftagEl)-footTop;
+          ftagSpacer.style.height=ftagEl.offsetHeight+'px'; ftagSpacer.style.display='block';
+          ftagEl.style.top=fFinal+'px'; ftagEl.classList.add('held');
+        } else {
+          ftagEl.classList.remove('held'); ftagEl.style.removeProperty('top');
+          ftagSpacer.style.display='none';
+        }
+        fHeldOn=fHeld;
+      }
     }
 
     requestAnimationFrame(frame);
