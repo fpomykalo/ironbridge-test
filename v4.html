@@ -177,7 +177,8 @@
   .galv-tag .gplus{ display:inline-flex; width:17px; height:17px; }
   .galv-tag .gplus img{ width:17px; height:17px; display:block; }
   .galv-frame{ position:relative; display:flex; align-items:center; gap:16px; }
-  .galv-frame .brk{ height:clamp(96px,12.7vw,184px); width:auto; flex:none; }  /* same size as the department brackets — the handoff is position-only */
+  .galv-frame .brk{ height:clamp(96px,12.7vw,184px); width:auto; flex:none; overflow:hidden; }  /* same size as the department brackets — the handoff is position-only */
+  .galv-frame .brk img{ transform:translateY(115%); will-change:transform; }     /* revealed like the footer brackets */
   .galv-frame .brk img{ height:100%; width:auto; display:block; }
   .galv-window{ position:relative; overflow:visible; }
   .galv-list{ list-style:none; text-align:left; will-change:transform; }
@@ -404,7 +405,7 @@
             <div class="galv-tag reveal">Your AI Department
               <span class="gplus"><img src="assets/svg/plus_dark.svg" alt="+"></span>
             </div>
-            <div class="galv-frame reveal">
+            <div class="galv-frame">
               <span class="brk l"><img src="assets/svg/bracket_dark_left.svg" alt=""></span>
               <div class="galv-window" id="galvWindow">
                 <ul class="galv-list" id="galvList">
@@ -975,6 +976,10 @@
   }
   if(REDUCE) [].concat(galvHeadInners,knowHeadInners,finalInners,ftagInners,howTitle.inners,secTitle.inners).forEach(function(s){ s.style.transform='translateY(0%)'; });
   if(REDUCE) ftagBrkImgs.forEach(function(b){ b.style.transform='translateY(0%)'; });
+  if(REDUCE) galvBrks.forEach(function(b){ b.style.transform='translateY(0%)'; });
+  /* the galvanise brackets hold their final spot while the list scrolls up into them */
+  var galvBrkSpans=document.querySelectorAll('.galv-frame .brk');
+  var gbHeld=false, gbPh=[];
 
   /* ---------- heat labels ---------- */
   function heatLabelFor(t){
@@ -1217,6 +1222,32 @@
         kHeldOn=kHeld;
       }
       driveRise(finalInners, sp||0);
+      /* galvanise brackets: viewport-held at their final spot through the approach,
+         glyphs rising through their masks on the heading's beats (like the footer) */
+      var gq=inv(sy, gt-vh*0.45, gt);
+      var gTl=gq*(0.35*(galvHeadInners.length-1)+1);
+      galvBrks[0].style.transform='translateY('+(115*(1-pow3out(clamp(gTl,0,1))))+'%)';
+      galvBrks[1].style.transform='translateY('+(115*(1-pow3out(clamp(gTl-0.35*(galvHeadInners.length-1),0,1))))+'%)';
+      var gbOn=sy>=gt-vh*0.45 && sy<gt;
+      if(gbOn!==gbHeld){
+        if(gbOn){
+          galvBrkSpans.forEach(function(s){
+            var r=s.getBoundingClientRect(), fTop=elTop(s)-gt;
+            var ph=document.createElement('span');
+            ph.style.cssText='display:block;width:'+r.width+'px;height:'+r.height+'px;flex:none;';
+            s.parentNode.insertBefore(ph, s); gbPh.push(ph);
+            s.style.position='fixed'; s.style.left=r.left+'px'; s.style.top=fTop+'px';
+            s.style.width=r.width+'px'; s.style.height=r.height+'px'; s.style.zIndex='2';
+          });
+        } else {
+          galvBrkSpans.forEach(function(s){
+            s.style.removeProperty('position'); s.style.removeProperty('left'); s.style.removeProperty('top');
+            s.style.removeProperty('width'); s.style.removeProperty('height'); s.style.removeProperty('z-index');
+          });
+          gbPh.forEach(function(p){ p.remove(); }); gbPh=[];
+        }
+        gbHeld=gbOn;
+      }
       /* "How we work." never scrolls: it holds its spot while the video card grows over
          it, and quietly fades so it is gone when the card later dithers away */
       runFlowTitle(howTitle, sy, vh, ht + 0.9*(howRun.offsetHeight - vh));
